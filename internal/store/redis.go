@@ -12,7 +12,6 @@ import (
 	"time"
 
 	bredis "github.com/Bugs5382/go-redis"
-	goredis "github.com/redis/go-redis/v9"
 )
 
 const (
@@ -42,7 +41,7 @@ type Store interface {
 }
 
 type redisStore struct {
-	c   goredis.UniversalClient
+	c   bredis.UniversalClient
 	ttl time.Duration
 }
 

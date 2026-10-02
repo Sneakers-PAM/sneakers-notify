@@ -82,7 +82,7 @@ func main() {
 	svc := grpcsvc.New(st, fo)
 
 	logger.Info().Str("port", grpcPort).Msg("starting")
-	if err := server.Run(ctx, grpcPort, func(gs *grpc.Server) {
+	if err := server.RunWithLogger(ctx, grpcPort, log.NewLogger(serviceName), func(gs *grpc.Server) {
 		grpcsvc.RegisterServer(gs, svc)
 	}); err != nil {
 		logger.Fatal().Err(err).Msg("server exited")
