@@ -34,30 +34,8 @@ func (r Resolver) Recipients(ctx context.Context, subjects []*notifyv1.InformedS
 		}
 	}
 	if len(groupNames) > 0 && r.Identity != nil {
-		// directory groups: name -> id -> members
-		if gr, err := r.Identity.ListGroups(ctx, &identityv1.ListGroupsRequest{}); err == nil {
-			nameToID := map[string]string{}
-			for _, g := range gr.GetGroups() {
-				nameToID[g.GetName()] = g.GetId()
-			}
-			for _, n := range groupNames {
-				id, ok := nameToID[n]
-				if !ok {
-					continue
-				}
-				if mr, err := r.Identity.ListGroupMembers(ctx, &identityv1.ListGroupMembersRequest{GroupId: id}); err == nil {
-					for _, u := range mr.GetUsers() {
-						set[u.GetId()] = true
-					}
-				}
-			}
-		}
-		// AD groups: by name
-		if ar, err := r.Identity.ListUsersByAdGroups(ctx, &identityv1.ListUsersByAdGroupsRequest{Names: groupNames}); err == nil {
-			for _, u := range ar.GetUsers() {
-				set[u.GetId()] = true
-			}
-		}
+		r.addDirectoryGroupMembers(ctx, groupNames, set)
+		r.addADGroupMembers(ctx, groupNames, set)
 	}
 	delete(set, excludeUserID)
 	delete(set, "")
@@ -66,6 +44,40 @@ func (r Resolver) Recipients(ctx context.Context, subjects []*notifyv1.InformedS
 		out = append(out, id)
 	}
 	return out, nil
+}
+
+// addDirectoryGroupMembers adds the members of each named directory group
+// (name -> id -> members) to set. A failed lookup is skipped.
+func (r Resolver) addDirectoryGroupMembers(ctx context.Context, groupNames []string, set map[string]bool) {
+	gr, err := r.Identity.ListGroups(ctx, &identityv1.ListGroupsRequest{})
+	if err != nil {
+		return
+	}
+	nameToID := map[string]string{}
+	for _, g := range gr.GetGroups() {
+		nameToID[g.GetName()] = g.GetId()
+	}
+	for _, n := range groupNames {
+		id, ok := nameToID[n]
+		if !ok {
+			continue
+		}
+		if mr, err := r.Identity.ListGroupMembers(ctx, &identityv1.ListGroupMembersRequest{GroupId: id}); err == nil {
+			for _, u := range mr.GetUsers() {
+				set[u.GetId()] = true
+			}
+		}
+	}
+}
+
+// addADGroupMembers adds the users of each named AD group to set. A failed
+// lookup is skipped.
+func (r Resolver) addADGroupMembers(ctx context.Context, groupNames []string, set map[string]bool) {
+	if ar, err := r.Identity.ListUsersByAdGroups(ctx, &identityv1.ListUsersByAdGroupsRequest{Names: groupNames}); err == nil {
+		for _, u := range ar.GetUsers() {
+			set[u.GetId()] = true
+		}
+	}
 }
 
 // ActorLabel returns a display name for userID (falls back to the id).
