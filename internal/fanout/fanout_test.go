@@ -53,13 +53,13 @@ func (f *fakeIdentity) ResolveUserLabels(ctx context.Context, in *identityv1.Res
 
 func TestRecipientsExpandsAndDropsActor(t *testing.T) {
 	r := Resolver{Identity: &fakeIdentity{
-		groups:    map[string]string{"SecOps": "g1"},
+		groups:    map[string]string{"example-group": "g1"},
 		members:   map[string][]string{"g1": {"user-a", "user-alice"}},
-		adMembers: map[string][]string{"SecOps": {"user-b"}},
+		adMembers: map[string][]string{"example-group": {"user-b"}},
 	}}
 	subs := []*notifyv1.InformedSubject{
 		{Kind: "user", Name: "user-c"},
-		{Kind: "group", Name: "SecOps"},
+		{Kind: "group", Name: "example-group"},
 		{Kind: "everyone"}, // ignored
 	}
 	got, err := r.Recipients(context.Background(), subs, "user-alice")
