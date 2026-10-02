@@ -1,0 +1,42 @@
+# API
+
+The service implements `sneakers.notify.v1.NotifyService`, defined in
+[proto/sneakers/notify/v1/notify.proto](../proto/sneakers/notify/v1/notify.proto). Go clients
+import the generated code from `github.com/Sneakers-PAM/sneakers-notify/gen/go/sneakers/notify/v1`.
+
+The server also registers the standard gRPC health service (`grpc.health.v1.Health`) and server
+reflection.
+
+Notify enforces no caller authorization itself: any caller can write an event or read any user's
+inbox by id. The gateway authenticates every request and passes the signed-in user's id; run
+notify where only the gateway and other trusted services can reach it.
+
+## RPCs
+
+| RPC | What it does |
+|---|---|
+| `NotifyEvent` | Fans one event out to its recipients and returns how many inboxes it reached (`delivered`). |
+| `ListNotifications` | A user's inbox, newest first. `limit` of 0, below 0 or above 100 means 100. |
+| `UnreadCount` | The number of unread items in the user's inbox, for the badge. |
+| `MarkRead` | Marks one item read. `ok` is false when the item isn't in the inbox (any more). |
+| `MarkAllRead` | Marks every item in the user's inbox read. |
+
+## How recipients are chosen
+
+`NotifyEvent` carries `informed_subjects`, each with a `kind`:
+
+- `user`: `name` is a user id and is added as is;
+- `group`: `name` is a group name. It is matched against the identity service's groups
+  (`ListGroups`, then `ListGroupMembers`) and also sent to `ListUsersByAdGroups`, which current
+  identity releases answer with an empty list;
+- `everyone`: ignored. Notify never broadcasts to every user.
+
+The result is de-duplicated, and `actor_user_id` is removed from it, so nobody is notified of their
+own action. A failed identity lookup skips that part of the expansion rather than failing the call.
+
+Each item stores the action, the resource kind, id and label, the actor's display name (from
+`ResolveUserLabels`, falling back to the actor's id) and `occurred_at` (the request's value, or the
+server's time in RFC 3339 when it is empty).
+
+`delivered` counts the inboxes written. A Redis error on one inbox is skipped and not counted; the
+call still succeeds.

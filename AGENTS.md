@@ -5,36 +5,33 @@ hook-enforced rules). Keep this file current when the build, layout, or public A
 
 ## What this is
 
-Sneakers notify service: email and push notifications
-
-<!-- Fill in: what the project does, what it ships (library, service, action, CLI), and the one or
-two things an agent must understand before changing it. -->
-
-## Using sneakers-notify
-
-<!-- If this project is consumed by others (a library/plugin/action), describe the contract a
-consumer must respect: the single entry point, the public surface, required options, and anything
-that must not be bypassed. Delete this section for a leaf application. -->
+Sneakers notify service: the best-effort notification inbox. A gRPC service
+(`sneakers.notify.v1.NotifyService`) over Redis that fans an event out to the users who should be
+kept informed (resolving groups through the identity service) and serves each user's inbox and
+unread count. Before changing it, know that it is best-effort on purpose: inboxes are capped and
+expire, lookups that fail are skipped rather than failing the call, and the audit trail, not
+notify, is the record of every event. Keep it that way.
 
 ## Layout
 
-<!-- The directories that matter and what lives in each. Keep it short; point at the entry points. -->
-
-- `src/` - <what>
-- `<tests dir>/` - <what>
+- `cmd/notify/` - the service entrypoint: environment, Redis, the identity client, the gRPC server.
+- `internal/grpcsvc/` - the service and its handler tests.
+- `internal/fanout/` - turns Informed subjects into recipient ids and labels the actor, over the
+  identity API.
+- `internal/store/` - the Redis inbox (one capped, expiring list per user) and its tests.
+- `internal/safeconv/` - the bounds-checked int to int32 conversion.
+- `internal/server/` - the gRPC server bootstrap.
+- `proto/` - the API; `gen/go/` - the generated Go (committed, checked current in CI).
+- `docs/` - configuration, API and runbook.
 
 ## Build, test, lint
 
-<!-- The exact commands. Pull these from package.json scripts (npm), the Taskfile (Go/Task), or
-pyproject (Python) so they stay accurate. -->
-
-- Build: `<command>`
-- Test: `<command>` (note any service/fixture the integration tests require)
-- Lint: `<command>`
-- Package checks (npm packages), after a build: `npm run check:pack` (contents and ceiling),
-  `npm run check:pack:growth` (growth against the last release), `npm run check:install`
-  (install the tarball, import ESM and CJS); see CLAUDE.md "npm package contents"
-- License headers / docs: `<command>`
+- Build: `task build`
+- Test: `task test`; the store tests start an in-process Redis, so nothing else is needed.
+- Lint: `task lint`, plus `buf lint` for the proto.
+- Generated code: `buf generate` with the plugin versions pinned in
+  `.github/workflows/job-go-lang-ci.yaml`.
+- License headers: `task license` (golic, the Apache-2.0 SPDX header in `.golic.yaml`).
 
 ## Logging
 
@@ -56,4 +53,8 @@ Follow the logging rules in `CLAUDE.md`. In short:
   `.claude/hooks` (run `bash .claude/hooks/install.sh` once per clone).
 - Open every PR as a draft. CI skips drafts, so run the full checks locally, push once they pass,
   and mark the PR ready when the work is finished; see CLAUDE.md "CI and Actions minutes".
-- <project-specific conventions, non-obvious constraints, and traps an agent should know>
+- Every commit carries a DCO sign-off (`git commit -s`); the `checks / scrub` job fails without it.
+- No real identifiers anywhere: fixtures use example.org, 192.0.2.0/24, 2001:db8::/32 and invented
+  names.
+- The identity API comes from `github.com/Sneakers-PAM/sneakers-identity`. `ListUsersByAdGroups` is
+  deprecated there (it answers empty); the lint config skips that one deprecation warning.
