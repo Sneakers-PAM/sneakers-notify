@@ -28,8 +28,9 @@ notify, is the record of every event. Keep it that way.
 
 - Build: `task build`
 - Test: `task test`; the store tests start an in-process Redis, so nothing else is needed.
-- Lint: `task lint`, plus `buf lint` for the proto.
-- Generated code: `buf generate` with the plugin versions pinned in
+- Lint: `task lint`, plus `buf lint` for the proto (after `scripts/proto-generate.sh` has
+  fetched the identity protos).
+- Generated code: `scripts/proto-generate.sh`, with the plugin versions pinned in
   `.github/workflows/job-go-lang-ci.yaml`.
 - License headers: `task license` (golic, the Apache-2.0 SPDX header in `.golic.yaml`).
 
@@ -56,5 +57,7 @@ Follow the logging rules in `CLAUDE.md`. In short:
 - Every commit carries a DCO sign-off (`git commit -s`); the `checks / scrub` job fails without it.
 - No real identifiers anywhere: fixtures use example.org, 192.0.2.0/24, 2001:db8::/32 and invented
   names.
-- The identity API comes from `github.com/Sneakers-PAM/sneakers-identity`. `ListUsersByAdGroups` is
-  deprecated there (it answers empty); the lint config skips that one deprecation warning.
+- The identity client stubs in `gen/go/thirdparty/identity/v1` are generated from the commit
+  pinned in `proto-refs.env` (see docs/api.md, "Calling other services"); never import another
+  service's Go module. `ListUsersByAdGroups` is deprecated in the identity API (it answers
+  empty); the lint config skips that one deprecation warning.
