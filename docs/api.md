@@ -7,9 +7,20 @@ import the generated code from `github.com/Sneakers-PAM/sneakers-notify/gen/go/s
 The server also registers the standard gRPC health service (`grpc.health.v1.Health`) and server
 reflection.
 
-Notify enforces no caller authorization itself: any caller can write an event or read any user's
-inbox by id. The gateway authenticates every request and passes the signed-in user's id; run
-notify where only the gateway and other trusted services can reach it.
+Every call must carry the caller's workload identity: its projected Kubernetes ServiceAccount
+token as `authorization: Bearer <token>` (see
+[configuration.md](configuration.md#service-to-service-authentication)). Notify verifies it and
+checks the caller against a per-method allow-list (`grpcsvc.CallerPolicy`):
+
+| Caller | Methods | Access |
+|---|---|---|
+| `vault` | `NotifyEvent` | as itself |
+| `gateway` | `ListNotifications`, `UnreadCount`, `MarkRead`, `MarkAllRead` | on behalf of the signed-in user (`user_id`) |
+
+No or a bad token, or a service account that isn't in `WORKLOAD_ALLOWED_SERVICEACCOUNTS`, gets
+`Unauthenticated`; a listed caller on a method it isn't listed for gets `PermissionDenied`. The
+health service is exempt. A refusal is logged at warn (`call refused`, with the method, caller and
+reason). The gateway still authenticates the end user and passes the signed-in user's id.
 
 ## RPCs
 

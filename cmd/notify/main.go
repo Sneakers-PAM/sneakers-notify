@@ -18,6 +18,7 @@ import (
 	"github.com/Sneakers-PAM/sneakers-notify/internal/grpcsvc"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/store"
+	"github.com/Sneakers-PAM/sneakers-notify/internal/workloadauth"
 	goredis "github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -42,6 +43,12 @@ func main() {
 	// environment rather than through a config loader that requires one.
 	grpcPort := env("GRPC_PORT", "9090")
 	otlpEndpoint := env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
+
+	// Service-to-service authentication fails closed: check it before anything
+	// else so a missing issuer stops the boot.
+	if _, _, err := workloadauth.ServerConfigFromEnv(os.Getenv); err != nil {
+		logger.Fatal().Err(err).Msg("workload auth config")
+	}
 
 	otelShutdown, err := otel.Init(ctx, serviceName, otlpEndpoint)
 	if err != nil {
@@ -71,7 +78,18 @@ func main() {
 
 	// Identity (recipient fan-out).
 	idAddr := env("IDENTITY_ADDR", "localhost:9192")
-	idConn, err := grpc.NewClient(idAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), server.ClientStatsHandler())
+	// Identity authenticates notify by its projected ServiceAccount token,
+	// re-read from WORKLOAD_TOKEN_FILE on every call.
+	idAuth, err := server.ClientAuth(os.Getenv)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("workload token")
+	}
+	if len(idAuth) > 0 {
+		logger.Info().Str("env", workloadauth.EnvTokenFile).Msg("identity: calls carry the workload token")
+	} else {
+		logger.Warn().Msg("identity: " + workloadauth.EnvTokenFile + " unset; calls carry no workload token (local development only)")
+	}
+	idConn, err := grpc.NewClient(idAddr, append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), server.ClientStatsHandler()}, idAuth...)...)
 	if err != nil {
 		logger.Fatal().Err(err).Str("identity", idAddr).Msg("dial identity")
 	}
@@ -81,10 +99,18 @@ func main() {
 	fo := fanout.Resolver{Identity: identityv1.NewIdentityServiceClient(idConn)}
 	svc := grpcsvc.New(st, fo)
 
+	svcLog := log.NewLogger(serviceName)
+	// Every caller is authenticated by its workload identity and checked
+	// against grpcsvc.CallerPolicy: the vault sends events, the gateway reads
+	// inboxes.
+	authOpts, err := server.WorkloadAuth(ctx, os.Getenv, grpcsvc.CallerPolicy(), svcLog)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("workload auth")
+	}
 	logger.Info().Str("port", grpcPort).Msg("starting")
-	if err := server.RunWithLogger(ctx, grpcPort, log.NewLogger(serviceName), func(gs *grpc.Server) {
+	if err := server.RunWithLogger(ctx, grpcPort, svcLog, func(gs *grpc.Server) {
 		grpcsvc.RegisterServer(gs, svc)
-	}); err != nil {
+	}, authOpts...); err != nil {
 		logger.Fatal().Err(err).Msg("server exited")
 	}
 }

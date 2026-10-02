@@ -1,6 +1,7 @@
 # Configuration
 
-The service reads its configuration from the environment. Every setting has a default.
+The service reads its configuration from the environment. Every setting has a default, except
+service-to-service authentication (below), which must be configured or explicitly disabled.
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -13,6 +14,44 @@ The service reads its configuration from the environment. Every setting has a de
 
 Local development logs at `trace` in `console` format (see `.env.example`). Cluster environments
 log JSON, at `debug` in a dev cluster, `info` in QA or staging and `error` in production.
+
+## Service-to-service authentication
+
+Notify checks every caller's workload identity and presents its own when it calls identity. The
+shared code is `internal/workloadauth`, a byte-for-byte copy of the package in sneakers-vault at
+`SNEAKERS_VAULT_REF` (`proto-refs.env`); CI checks the copy with `scripts/workloadauth-check.sh`.
+
+As a callee:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `WORKLOAD_OIDC_ISSUER` | (required) | The cluster's ServiceAccount token issuer (`https://`). The token's `iss` must equal it. |
+| `WORKLOAD_OIDC_JWKS_URL` | discovered | JWKS URL (`https://`); when unset it's read from the issuer's OpenID configuration. |
+| `WORKLOAD_OIDC_CA_FILE` | system roots | Extra PEM CA bundle for discovery and the JWKS fetch. |
+| `WORKLOAD_OIDC_BEARER_FILE` | (unset) | Bearer token sent on discovery and the JWKS fetch, re-read on every fetch. |
+| `WORKLOAD_AUDIENCE` | `sneakers` | The token's `aud` must contain it. |
+| `WORKLOAD_ALLOWED_SERVICEACCOUNTS` | (required) | Comma list of `<namespace>/<serviceaccount>`: for notify, `<ns>/sneakers-vault,<ns>/sneakers-gateway`. |
+| `WORKLOAD_AUTH` | (unset) | `disabled` turns the check off, for local development only: every caller that reaches the port is trusted, and a warning is logged at start and every 5 minutes. No other value is accepted. |
+
+Without `WORKLOAD_OIDC_ISSUER` the service refuses to start, unless `WORKLOAD_AUTH=disabled`;
+setting both is refused too.
+
+As a caller (to identity):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `WORKLOAD_TOKEN_FILE` | (unset) | Path of the projected ServiceAccount token (audience `sneakers`), normally `/var/run/secrets/sneakers/token`. Sent on every identity call and re-read each time, so a rotated token is picked up. A set path that can't be read stops the start. Unset sends no token, which only an identity with authentication off accepts. |
+
+Example (cluster):
+
+```bash
+WORKLOAD_OIDC_ISSUER=https://kubernetes.default.svc.cluster.local
+WORKLOAD_OIDC_CA_FILE=/var/run/secrets/tokens/ca.crt
+WORKLOAD_OIDC_BEARER_FILE=/var/run/secrets/tokens/token
+WORKLOAD_AUDIENCE=sneakers
+WORKLOAD_ALLOWED_SERVICEACCOUNTS=sneakers/sneakers-vault,sneakers/sneakers-gateway
+WORKLOAD_TOKEN_FILE=/var/run/secrets/sneakers/token
+```
 
 ## Fixed limits
 
