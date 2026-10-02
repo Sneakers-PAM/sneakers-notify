@@ -13,7 +13,7 @@ import (
 	log "github.com/Bugs5382/go-log"
 	otel "github.com/Bugs5382/go-otel"
 	bredis "github.com/Bugs5382/go-redis"
-	identityv1 "github.com/Sneakers-PAM/sneakers-identity/gen/go/sneakers/identity/v1"
+	identityv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/thirdparty/identity/v1"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/fanout"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/grpcsvc"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
