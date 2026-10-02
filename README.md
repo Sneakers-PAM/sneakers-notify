@@ -21,10 +21,13 @@ audit trail is the durable record of every event, not notify.
 
 ```bash
 docker run -d --name notify-redis -p 127.0.0.1:6379:6379 redis:7-alpine
-REDIS_URL=redis://localhost:6379/0 IDENTITY_ADDR=localhost:9192 go run ./cmd/notify
+WORKLOAD_AUTH=disabled REDIS_URL=redis://localhost:6379/0 IDENTITY_ADDR=localhost:9192 \
+  go run ./cmd/notify
 ```
 
-The service listens for gRPC on port 9090. It needs Redis at start; the identity service is only
+`WORKLOAD_AUTH=disabled` lets any local caller in without a workload token, for development only.
+In a cluster notify accepts only the vault and the gateway, by their ServiceAccount tokens, and
+sends its own token to identity. The service listens for gRPC on port 9090. It needs Redis at start; the identity service is only
 called when an event names a group or when it labels the actor, and a failed lookup is skipped.
 
 Run the tests (the store tests use an in-process Redis, so nothing else is needed):
@@ -40,6 +43,7 @@ task build    # go build ./...
 task test     # go test ./...
 task lint     # tests, gofmt check, golangci-lint and yamllint
 task license  # check the Apache-2.0 headers (golic)
+scripts/workloadauth-check.sh  # internal/workloadauth must match the vault's copy
 ```
 
 ## 📚 Where to look
