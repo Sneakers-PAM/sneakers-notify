@@ -16,6 +16,7 @@ import (
 	identityv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/thirdparty/identity/v1"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/fanout"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/grpcsvc"
+	"github.com/Sneakers-PAM/sneakers-notify/internal/health"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/store"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/workloadauth"
@@ -108,7 +109,11 @@ func main() {
 		logger.Fatal().Err(err).Msg("workload auth")
 	}
 	logger.Info().Str("port", grpcPort).Msg("starting")
-	if err := server.RunWithLogger(ctx, grpcPort, svcLog, func(gs *grpc.Server) {
+	// Readiness follows Valkey: every RPC reads or writes the inbox there.
+	// Identity only resolves the recipients and actor label of a new event, so
+	// while it's down notify still serves the inbox and is only degraded.
+	checker := health.New(svcLog, health.Valkey(rc.Redis()), health.GRPCPeer("identity", false, idConn))
+	if err := server.RunWithHealth(ctx, grpcPort, svcLog, checker, func(gs *grpc.Server) {
 		grpcsvc.RegisterServer(gs, svc)
 	}, authOpts...); err != nil {
 		logger.Fatal().Err(err).Msg("server exited")
