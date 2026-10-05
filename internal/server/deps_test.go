@@ -1,7 +1,7 @@
 // Copyright 2026 The Sneakers-PAM Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package health
+package server
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Bugs5382/go-buildinfo/health"
 	log "github.com/Bugs5382/go-log"
 	"github.com/alicebob/miniredis/v2"
 	goredis "github.com/redis/go-redis/v9"
@@ -36,7 +37,7 @@ func TestValkey_DownWhileTheServerIsGone(t *testing.T) {
 	if err == nil {
 		t.Fatal("down: no error")
 	}
-	if c := Classify(err); c != ClassRefused && c != ClassUnavailable {
+	if c := reportedClass(t, func(context.Context) error { return err }); c != "refused" && c != "unavailable" {
 		t.Fatalf("class = %q, want refused or unavailable", c)
 	}
 	if err := mr.Restart(); err != nil {
@@ -71,8 +72,8 @@ func TestGRPCPeer_FollowsThePeersHealth(t *testing.T) {
 		t.Fatalf("serving: %v", err)
 	}
 	hs.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
-	if err := dep.Check(context.Background()); Classify(err) != ClassUnavailable {
-		t.Fatalf("not serving: %v (class %q), want unavailable", err, Classify(err))
+	if c := reportedClass(t, dep.Check); c != "unavailable" {
+		t.Fatalf("not serving: class %q, want unavailable", c)
 	}
 	s.Stop()
 	ctx, cancel := context.WithTimeout(context.Background(), CheckTimeout)
@@ -95,12 +96,13 @@ func TestValkey_StopAndStartMidTest(t *testing.T) {
 	rc := goredis.NewClient(&goredis.Options{Addr: addr})
 	t.Cleanup(func() { _ = rc.Close() })
 
-	clk := time.Now()
-	c := New(log.Nop(), Valkey(rc))
-	c.now = func() time.Time { return clk }
-	report := func() Report { clk = clk.Add(CacheTTL); return c.Report(ctx) }
+	c, err := NewChecker(log.Nop(), []health.Dependency{Valkey(rc)}, health.WithTTL(testTTL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := func() health.Report { time.Sleep(testTTL); return c.Report(ctx) }
 
-	if r := report(); r.Status != StateOK {
+	if r := report(); r.Status != health.StateOK {
 		t.Fatalf("before the stop: %+v", r)
 	}
 	docker(t, "stop", name)
@@ -110,7 +112,7 @@ func TestValkey_StopAndStartMidTest(t *testing.T) {
 			_ = exec.Command("docker", "start", name).Run()
 		}
 	})
-	if r := report(); r.Status != StateDown || r.Dependencies[0].Error == "" {
+	if r := report(); r.Status != health.StateDown || r.Ready || r.Dependencies[0].Error == "" {
 		t.Fatalf("while stopped: %+v", r)
 	}
 	docker(t, "start", name)
@@ -118,7 +120,7 @@ func TestValkey_StopAndStartMidTest(t *testing.T) {
 	deadline := time.Now().Add(30 * time.Second)
 	for {
 		r := report()
-		if r.Status == StateOK {
+		if r.Status == health.StateOK {
 			break
 		}
 		if time.Now().After(deadline) {

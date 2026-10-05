@@ -47,12 +47,12 @@ out of its Service without restarting it. The kubelet's liveness probe has to as
 
 Notify has no database and uses no broker. The `sneakers-health` header (see [api.md](api.md))
 shows each dependency's state, error class and last check. A state change logs one line:
-`health: dependency down` (or `degraded`) at warn, `health: dependency recovered` at info, with
-the dependency, whether it's required and the error class; never the URL or the error text.
+`dependency check failing` at warn, `dependency recovered` at info, with the dependency, whether
+it's required, the states it moved between and the error class; never the URL or the error text.
 
 To see which build is running, ask for the response headers (`grpcurl -v`): the answer carries
 `sneakers-version` and `sneakers-commit`. The image build stamps them from its `VERSION` and
-`COMMIT` build arguments:
+`COMMIT` build arguments, into go-buildinfo's `Version` and `Commit`:
 
 ```bash
 docker build --build-arg VERSION=v0.1.0 --build-arg COMMIT="$(git rev-parse HEAD)" .

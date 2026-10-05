@@ -4,12 +4,14 @@ The service implements `sneakers.notify.v1.NotifyService`, defined in
 [proto/sneakers/notify/v1/notify.proto](../proto/sneakers/notify/v1/notify.proto). Go clients
 import the generated code from `github.com/Sneakers-PAM/sneakers-notify/gen/go/sneakers/notify/v1`.
 
-The server also registers the standard gRPC health service (`grpc.health.v1.Health`) and server
-reflection.
+The server also registers the standard gRPC health service (`grpc.health.v1.Health`, driven by
+`github.com/Bugs5382/go-buildinfo`) and server reflection.
 
-A health check's answer carries the build in its response headers: `sneakers-version` (the image
-tag, `dev` when unstamped) and `sneakers-commit` (the source commit, `unknown` when neither the
-build nor Go's VCS stamp knows it). The gateway's diagnostics read them.
+Every health check's answer carries the build in its response headers: `sneakers-version` (the
+image tag, `dev` when unstamped) and `sneakers-commit` (the source commit, `unknown` when neither
+the build nor Go's VCS stamp knows it). A readiness answer also carries
+`sneakers-depstate-valkey` and `sneakers-depstate-identity` (`ok`, `degraded` or `down`). The
+gateway's diagnostics read them.
 
 The health check has two services:
 
@@ -19,15 +21,17 @@ The health check has two services:
   carries `sneakers-health`, a compact JSON report:
 
   ```json
-  {"status":"degraded","dependencies":[{"name":"valkey","state":"ok","required":true,"checkedAt":"2026-10-05T12:00:05Z"},{"name":"identity","state":"degraded","required":false,"error":"unavailable","checkedAt":"2026-10-05T12:00:05Z"}]}
+  {"status":"degraded","ready":true,"dependencies":[{"name":"valkey","state":"ok","required":true,"checkedAt":"2026-10-05T12:00:05Z"},{"name":"identity","state":"degraded","required":false,"error":"unavailable","checkedAt":"2026-10-05T12:00:05Z"}]}
   ```
 
   `status` and each `state` are `ok`, `degraded` (an optional dependency is failing; still
   serving) or `down` (a required one is; not serving). `error` is a class, never the error
-  itself: `timeout`, `refused`, `unavailable`, `unauthenticated` or `error`.
+  itself: `timeout`, `refused`, `unavailable`, `unauthenticated` or `error` (or go-buildinfo's
+  `connection-refused`, `dns`, `network`, `canceled` or `panic`).
 - `liveness` answers `SERVING` whenever the process does and never touches a dependency.
 
-Any other service name is `NOT_FOUND`. `Watch` is not supported (`UNIMPLEMENTED`); poll `Check`.
+Any other service name is `NOT_FOUND`. `Watch` streams the serving status of either service as it
+changes.
 
 Every call must carry the caller's workload identity: its projected Kubernetes ServiceAccount
 token as `authorization: Bearer <token>` (see

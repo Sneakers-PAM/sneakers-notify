@@ -20,7 +20,8 @@ notify, is the record of every event. Keep it that way.
   identity API.
 - `internal/store/` - the Redis inbox (one capped, expiring list per user) and its tests.
 - `internal/safeconv/` - the bounds-checked int to int32 conversion.
-- `internal/server/` - the gRPC server bootstrap.
+- `internal/server/` - the gRPC server bootstrap, with the health service and readiness checks
+  from `github.com/Bugs5382/go-buildinfo`.
 - `internal/workloadauth/` - service-to-service authentication, a byte-for-byte copy of
   sneakers-vault's package at `SNEAKERS_VAULT_REF` (`proto-refs.env`). Never edit it here: change
   it in the vault, then copy it and bump the ref (`scripts/workloadauth-check.sh` fails CI
