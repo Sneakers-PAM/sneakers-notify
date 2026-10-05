@@ -11,6 +11,24 @@ A health check's answer carries the build in its response headers: `sneakers-ver
 tag, `dev` when unstamped) and `sneakers-commit` (the source commit, `unknown` when neither the
 build nor Go's VCS stamp knows it). The gateway's diagnostics read them.
 
+The health check has two services:
+
+- `""` (the default) is readiness. It answers `NOT_SERVING` while Valkey, a required
+  dependency, doesn't answer a `PING`, and `SERVING` again once it does. Each ping has a 1-second
+  timeout and its result answers for 5 seconds, so frequent probes don't load Valkey. Its answer
+  carries `sneakers-health`, a compact JSON report:
+
+  ```json
+  {"status":"degraded","dependencies":[{"name":"valkey","state":"ok","required":true,"checkedAt":"2026-10-05T12:00:05Z"},{"name":"identity","state":"degraded","required":false,"error":"unavailable","checkedAt":"2026-10-05T12:00:05Z"}]}
+  ```
+
+  `status` and each `state` are `ok`, `degraded` (an optional dependency is failing; still
+  serving) or `down` (a required one is; not serving). `error` is a class, never the error
+  itself: `timeout`, `refused`, `unavailable`, `unauthenticated` or `error`.
+- `liveness` answers `SERVING` whenever the process does and never touches a dependency.
+
+Any other service name is `NOT_FOUND`. `Watch` is not supported (`UNIMPLEMENTED`); poll `Check`.
+
 Every call must carry the caller's workload identity: its projected Kubernetes ServiceAccount
 token as `authorization: Bearer <token>` (see
 [configuration.md](configuration.md#service-to-service-authentication)). Notify verifies it and

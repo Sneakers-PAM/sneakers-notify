@@ -31,8 +31,24 @@ Use the standard gRPC health check. It needs no workload token, so a kubelet `gr
 as is, and so does a client that knows the health API without asking the server:
 
 ```bash
-grpc_health_probe -addr localhost:9090
+grpc_health_probe -addr localhost:9090                    # readiness
+grpc_health_probe -addr localhost:9090 -service liveness  # liveness
 ```
+
+Readiness fails while Valkey doesn't answer, and recovers on its own within about 5 seconds of
+it answering again. Liveness only shows that the process answers, so a Valkey outage takes notify
+out of its Service without restarting it. The kubelet's liveness probe has to ask for the
+`liveness` service to get that; the probes are set in sneakers-release's chart.
+
+| Dependency | Required | Why |
+|---|---|---|
+| Valkey | yes | The inbox lives there: every RPC (`NotifyEvent`, `ListNotifications`, `UnreadCount`, `MarkRead`, `MarkAllRead`) reads or writes it. |
+| identity (gRPC) | no | Only `NotifyEvent` asks it, to expand group recipients and label the actor. While it's down the inbox still answers, so notify is degraded, not down. |
+
+Notify has no database and uses no broker. The `sneakers-health` header (see [api.md](api.md))
+shows each dependency's state, error class and last check. A state change logs one line:
+`health: dependency down` (or `degraded`) at warn, `health: dependency recovered` at info, with
+the dependency, whether it's required and the error class; never the URL or the error text.
 
 To see which build is running, ask for the response headers (`grpcurl -v`): the answer carries
 `sneakers-version` and `sneakers-commit`. The image build stamps them from its `VERSION` and
