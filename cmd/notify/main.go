@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Bugs5382/go-buildinfo/health"
 	log "github.com/Bugs5382/go-log"
 	otel "github.com/Bugs5382/go-otel"
 	bredis "github.com/Bugs5382/go-redis"
 	identityv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/thirdparty/identity/v1"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/fanout"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/grpcsvc"
-	"github.com/Sneakers-PAM/sneakers-notify/internal/health"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/store"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/workloadauth"
@@ -112,7 +112,10 @@ func main() {
 	// Readiness follows Valkey: every RPC reads or writes the inbox there.
 	// Identity only resolves the recipients and actor label of a new event, so
 	// while it's down notify still serves the inbox and is only degraded.
-	checker := health.New(svcLog, health.Valkey(rc.Redis()), health.GRPCPeer("identity", false, idConn))
+	checker, err := server.NewChecker(svcLog, []health.Dependency{server.Valkey(rc.Redis()), server.GRPCPeer("identity", false, idConn)})
+	if err != nil {
+		logger.Fatal().Err(err).Msg("health checker")
+	}
 	if err := server.RunWithHealth(ctx, grpcPort, svcLog, checker, func(gs *grpc.Server) {
 		grpcsvc.RegisterServer(gs, svc)
 	}, authOpts...); err != nil {
