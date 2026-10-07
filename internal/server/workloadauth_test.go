@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	log "github.com/Bugs5382/go-log"
-	"github.com/Sneakers-PAM/sneakers-notify/internal/workloadauth"
+	workloadauth "github.com/Bugs5382/go-workload-identity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
