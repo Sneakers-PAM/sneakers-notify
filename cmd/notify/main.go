@@ -104,15 +104,22 @@ func main() {
 	// Every caller is authenticated by its workload identity and checked
 	// against grpcsvc.CallerPolicy: the vault sends events, the gateway reads
 	// inboxes.
-	authOpts, err := server.WorkloadAuth(ctx, os.Getenv, grpcsvc.CallerPolicy(), svcLog)
+	workloadVerifier, authOpts, err := server.WorkloadAuth(ctx, os.Getenv, grpcsvc.CallerPolicy(), svcLog)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("workload auth")
 	}
 	logger.Info().Str("port", grpcPort).Msg("starting")
 	// Readiness follows Valkey: every RPC reads or writes the inbox there.
 	// Identity only resolves the recipients and actor label of a new event, so
-	// while it's down notify still serves the inbox and is only degraded.
-	checker, err := server.NewChecker(svcLog, []health.Dependency{server.Valkey(rc.Redis()), server.GRPCPeer("identity", false, idConn)})
+	// while it's down notify still serves the inbox and is only degraded. The
+	// workload-identity verifier is required too once authentication is on: no
+	// caller can be checked before its key set loads. It's left out when
+	// authentication is disabled (verifier nil).
+	deps := []health.Dependency{server.Valkey(rc.Redis()), server.GRPCPeer("identity", false, idConn)}
+	if workloadVerifier != nil {
+		deps = append(deps, server.WorkloadIdentity(workloadVerifier))
+	}
+	checker, err := server.NewChecker(svcLog, deps)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("health checker")
 	}
