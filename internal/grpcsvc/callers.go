@@ -4,8 +4,8 @@
 package grpcsvc
 
 import (
+	workloadauth "github.com/Bugs5382/go-workload-identity"
 	notifyv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/sneakers/notify/v1"
-	"github.com/Sneakers-PAM/sneakers-notify/internal/workloadauth"
 )
 
 // Caller names, from the service accounts sneakers-<name>.

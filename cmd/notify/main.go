@@ -14,12 +14,12 @@ import (
 	log "github.com/Bugs5382/go-log"
 	otel "github.com/Bugs5382/go-otel"
 	bredis "github.com/Bugs5382/go-redis"
+	workloadauth "github.com/Bugs5382/go-workload-identity"
 	identityv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/thirdparty/identity/v1"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/fanout"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/grpcsvc"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/store"
-	"github.com/Sneakers-PAM/sneakers-notify/internal/workloadauth"
 	goredis "github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -47,7 +47,7 @@ func main() {
 
 	// Service-to-service authentication fails closed: check it before anything
 	// else so a missing issuer stops the boot.
-	if _, _, err := workloadauth.ServerConfigFromEnv(os.Getenv); err != nil {
+	if _, _, err := server.WorkloadConfigFromEnv(os.Getenv); err != nil {
 		logger.Fatal().Err(err).Msg("workload auth config")
 	}
 

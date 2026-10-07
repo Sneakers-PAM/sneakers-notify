@@ -18,8 +18,12 @@ log JSON, at `debug` in a dev cluster, `info` in QA or staging and `error` in pr
 ## Service-to-service authentication
 
 Notify checks every caller's workload identity and presents its own when it calls identity. The
-shared code is `internal/workloadauth`, a byte-for-byte copy of the package in sneakers-vault at
-`SNEAKERS_VAULT_REF` (`proto-refs.env`); CI checks the copy with `scripts/workloadauth-check.sh`.
+code is the owner's helper package
+[`github.com/Bugs5382/go-workload-identity`](https://github.com/Bugs5382/go-workload-identity)
+(v1.0.0), which every Sneakers service imports in place of its old private copy.
+`internal/server/workloadauth.go` sets the Sneakers values the package has no default for: the
+audience `sneakers` when `WORKLOAD_AUDIENCE` is unset, and the caller-name prefix `sneakers-`
+(`WORKLOAD_SERVICEACCOUNT_PREFIX` is not read).
 
 As a callee:
 
