@@ -43,7 +43,9 @@ func main() {
 	// notify has no database, so it reads its few settings straight from the
 	// environment rather than through a config loader that requires one.
 	grpcPort := env("GRPC_PORT", "9090")
-	otlpEndpoint := env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
+	// Empty means no collector: otel.Init runs without an exporter instead of
+	// retrying a default localhost address that is rarely there.
+	otlpEndpoint := env("OTEL_EXPORTER_OTLP_ENDPOINT", "")
 
 	// Service-to-service authentication fails closed: check it before anything
 	// else so a missing issuer stops the boot.
