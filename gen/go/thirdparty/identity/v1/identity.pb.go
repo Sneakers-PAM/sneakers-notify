@@ -525,6 +525,7 @@ func (x *GetGroupResponse) GetGroup() *Group {
 type CreateGroupRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,2,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -562,6 +563,13 @@ func (*CreateGroupRequest) Descriptor() ([]byte, []int) {
 func (x *CreateGroupRequest) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateGroupRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -857,6 +865,7 @@ type PreCreateLocalUserRequest struct {
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Roles         []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,4,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -910,6 +919,13 @@ func (x *PreCreateLocalUserRequest) GetRoles() []string {
 		return x.Roles
 	}
 	return nil
+}
+
+func (x *PreCreateLocalUserRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
+	}
+	return ""
 }
 
 type PreCreateLocalUserResponse struct {
@@ -966,6 +982,7 @@ type CreateLocalUserRequest struct {
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,5,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1028,6 +1045,13 @@ func (x *CreateLocalUserRequest) GetPassword() string {
 	return ""
 }
 
+func (x *CreateLocalUserRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
+	}
+	return ""
+}
+
 type CreateLocalUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
@@ -1075,10 +1099,14 @@ func (x *CreateLocalUserResponse) GetUser() *User {
 // SetUserRoles replaces a user's role set (e.g. grant/revoke the "admin" role).
 // Admin-gated at the gateway. root's admin authority derives from is_root, so it
 // survives an empty role set. Returns the updated user.
+// Granting or revoking the "recovery" role (access to the vault's prior
+// secret versions) is refused with PermissionDenied unless acting_user_id is
+// an enabled site admin or root; PreCreateLocalUser applies the same rule.
 type SetUserRolesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Roles         []string               `protobuf:"bytes,2,rep,name=roles,proto3" json:"roles,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1125,6 +1153,13 @@ func (x *SetUserRolesRequest) GetRoles() []string {
 		return x.Roles
 	}
 	return nil
+}
+
+func (x *SetUserRolesRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
+	}
+	return ""
 }
 
 type SetUserRolesResponse struct {
@@ -1184,6 +1219,7 @@ type UpdateUserRequest struct {
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	Username      string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,5,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1242,6 +1278,13 @@ func (x *UpdateUserRequest) GetEmail() string {
 func (x *UpdateUserRequest) GetUsername() string {
 	if x != nil {
 		return x.Username
+	}
+	return ""
+}
+
+func (x *UpdateUserRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -1895,6 +1938,7 @@ type AddGroupMemberRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	GroupId       string                 `protobuf:"bytes,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1939,6 +1983,13 @@ func (x *AddGroupMemberRequest) GetUserId() string {
 func (x *AddGroupMemberRequest) GetGroupId() string {
 	if x != nil {
 		return x.GroupId
+	}
+	return ""
+}
+
+func (x *AddGroupMemberRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -1999,6 +2050,7 @@ type RemoveGroupMemberRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	GroupId       string                 `protobuf:"bytes,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2043,6 +2095,13 @@ func (x *RemoveGroupMemberRequest) GetUserId() string {
 func (x *RemoveGroupMemberRequest) GetGroupId() string {
 	if x != nil {
 		return x.GroupId
+	}
+	return ""
+}
+
+func (x *RemoveGroupMemberRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -2603,10 +2662,13 @@ func (x *ResolveUserContextRequest) GetSubject() string {
 }
 
 type ResolveUserContextResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
-	GroupNames    []string               `protobuf:"bytes,2,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"` // directory group names only
-	Roles         []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	User       *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	GroupNames []string               `protobuf:"bytes,2,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"` // directory group names only
+	Roles      []string               `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
+	// The ids of the same groups as group_names, in the same order, so a rule
+	// that names a group by id matches.
+	GroupIds      []string `protobuf:"bytes,4,rep,name=group_ids,json=groupIds,proto3" json:"group_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2658,6 +2720,13 @@ func (x *ResolveUserContextResponse) GetGroupNames() []string {
 func (x *ResolveUserContextResponse) GetRoles() []string {
 	if x != nil {
 		return x.Roles
+	}
+	return nil
+}
+
+func (x *ResolveUserContextResponse) GetGroupIds() []string {
+	if x != nil {
+		return x.GroupIds
 	}
 	return nil
 }
@@ -3044,6 +3113,7 @@ func (x *GetMfaStatusResponse) GetEnrolled() bool {
 type DisableTotpRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,2,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3081,6 +3151,13 @@ func (*DisableTotpRequest) Descriptor() ([]byte, []int) {
 func (x *DisableTotpRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
+	}
+	return ""
+}
+
+func (x *DisableTotpRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -4271,6 +4348,7 @@ type RemoveWebauthnCredentialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	CredentialId  string                 `protobuf:"bytes,2,opt,name=credential_id,json=credentialId,proto3" json:"credential_id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4315,6 +4393,13 @@ func (x *RemoveWebauthnCredentialRequest) GetUserId() string {
 func (x *RemoveWebauthnCredentialRequest) GetCredentialId() string {
 	if x != nil {
 		return x.CredentialId
+	}
+	return ""
+}
+
+func (x *RemoveWebauthnCredentialRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -4509,6 +4594,7 @@ type RemoveFactorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4553,6 +4639,13 @@ func (x *RemoveFactorRequest) GetUserId() string {
 func (x *RemoveFactorRequest) GetKind() string {
 	if x != nil {
 		return x.Kind
+	}
+	return ""
+}
+
+func (x *RemoveFactorRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -5003,6 +5096,7 @@ func (x *ListServiceAccountsResponse) GetServiceAccounts() []*ServiceAccount {
 type DisableServiceAccountRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,2,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5040,6 +5134,13 @@ func (*DisableServiceAccountRequest) Descriptor() ([]byte, []int) {
 func (x *DisableServiceAccountRequest) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *DisableServiceAccountRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -5304,6 +5405,7 @@ func (x *ListApiTokensResponse) GetTokens() []*ApiToken {
 type RevokeApiTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,2,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5341,6 +5443,13 @@ func (*RevokeApiTokenRequest) Descriptor() ([]byte, []int) {
 func (x *RevokeApiTokenRequest) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *RevokeApiTokenRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -5402,8 +5511,11 @@ type UserToken struct {
 	LastUsedAtUnix int64                  `protobuf:"varint,6,opt,name=last_used_at_unix,json=lastUsedAtUnix,proto3" json:"last_used_at_unix,omitempty"`
 	RevokedAtUnix  int64                  `protobuf:"varint,7,opt,name=revoked_at_unix,json=revokedAtUnix,proto3" json:"revoked_at_unix,omitempty"`
 	ExpiresAtUnix  int64                  `protobuf:"varint,8,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"` // 0 = never
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// "mcp" for a token minted through the OAuth flow for native (MCP)
+	// clients, "cli" for one minted on the tokens page.
+	ClientKind    string `protobuf:"bytes,9,opt,name=client_kind,json=clientKind,proto3" json:"client_kind,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserToken) Reset() {
@@ -5492,12 +5604,21 @@ func (x *UserToken) GetExpiresAtUnix() int64 {
 	return 0
 }
 
+func (x *UserToken) GetClientKind() string {
+	if x != nil {
+		return x.ClientKind
+	}
+	return ""
+}
+
 type MintUserTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
 	ClientName    string                 `protobuf:"bytes,3,opt,name=client_name,json=clientName,proto3" json:"client_name,omitempty"`
 	ExpiresAtUnix int64                  `protobuf:"varint,4,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"` // 0 = never
+	// "mcp" or "cli"; empty means "cli". Any other value is InvalidArgument.
+	ClientKind    string `protobuf:"bytes,5,opt,name=client_kind,json=clientKind,proto3" json:"client_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5558,6 +5679,13 @@ func (x *MintUserTokenRequest) GetExpiresAtUnix() int64 {
 		return x.ExpiresAtUnix
 	}
 	return 0
+}
+
+func (x *MintUserTokenRequest) GetClientKind() string {
+	if x != nil {
+		return x.ClientKind
+	}
+	return ""
 }
 
 type MintUserTokenResponse struct {
@@ -5706,6 +5834,7 @@ type RevokeUserTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5750,6 +5879,13 @@ func (x *RevokeUserTokenRequest) GetId() string {
 func (x *RevokeUserTokenRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
+	}
+	return ""
+}
+
+func (x *RevokeUserTokenRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
 	}
 	return ""
 }
@@ -5845,11 +5981,16 @@ func (x *VerifyUserTokenRequest) GetToken() string {
 }
 
 type VerifyUserTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Valid         bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
-	TokenId       string                 `protobuf:"bytes,2,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
-	User          *User                  `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
-	GroupNames    []string               `protobuf:"bytes,4,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Valid      bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	TokenId    string                 `protobuf:"bytes,2,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
+	User       *User                  `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	GroupNames []string               `protobuf:"bytes,4,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"`
+	// The ids of the same groups as group_names, in the same order.
+	GroupIds []string `protobuf:"bytes,5,rep,name=group_ids,json=groupIds,proto3" json:"group_ids,omitempty"`
+	// The token's client kind ("mcp" or "cli"), so the caller can tell an MCP
+	// agent token from a machine-API token.
+	ClientKind    string `protobuf:"bytes,6,opt,name=client_kind,json=clientKind,proto3" json:"client_kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5912,17 +6053,122 @@ func (x *VerifyUserTokenResponse) GetGroupNames() []string {
 	return nil
 }
 
+func (x *VerifyUserTokenResponse) GetGroupIds() []string {
+	if x != nil {
+		return x.GroupIds
+	}
+	return nil
+}
+
+func (x *VerifyUserTokenResponse) GetClientKind() string {
+	if x != nil {
+		return x.ClientKind
+	}
+	return ""
+}
+
+// kind is "mcp" or "cli". revoked counts the tokens this call revoked; tokens
+// already revoked or expired aren't counted.
+type RevokeTokensByClientKindRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeTokensByClientKindRequest) Reset() {
+	*x = RevokeTokensByClientKindRequest{}
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[116]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeTokensByClientKindRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeTokensByClientKindRequest) ProtoMessage() {}
+
+func (x *RevokeTokensByClientKindRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[116]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeTokensByClientKindRequest.ProtoReflect.Descriptor instead.
+func (*RevokeTokensByClientKindRequest) Descriptor() ([]byte, []int) {
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{116}
+}
+
+func (x *RevokeTokensByClientKindRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+type RevokeTokensByClientKindResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Revoked       int64                  `protobuf:"varint,1,opt,name=revoked,proto3" json:"revoked,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeTokensByClientKindResponse) Reset() {
+	*x = RevokeTokensByClientKindResponse{}
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[117]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeTokensByClientKindResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeTokensByClientKindResponse) ProtoMessage() {}
+
+func (x *RevokeTokensByClientKindResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[117]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeTokensByClientKindResponse.ProtoReflect.Descriptor instead.
+func (*RevokeTokensByClientKindResponse) Descriptor() ([]byte, []int) {
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{117}
+}
+
+func (x *RevokeTokensByClientKindResponse) GetRevoked() int64 {
+	if x != nil {
+		return x.Revoked
+	}
+	return 0
+}
+
 type SetUserDisabledRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Disabled      bool                   `protobuf:"varint,2,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	ActingUserId  string                 `protobuf:"bytes,3,opt,name=acting_user_id,json=actingUserId,proto3" json:"acting_user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SetUserDisabledRequest) Reset() {
 	*x = SetUserDisabledRequest{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[116]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5934,7 +6180,7 @@ func (x *SetUserDisabledRequest) String() string {
 func (*SetUserDisabledRequest) ProtoMessage() {}
 
 func (x *SetUserDisabledRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[116]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5947,7 +6193,7 @@ func (x *SetUserDisabledRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetUserDisabledRequest.ProtoReflect.Descriptor instead.
 func (*SetUserDisabledRequest) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{116}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *SetUserDisabledRequest) GetUserId() string {
@@ -5964,6 +6210,13 @@ func (x *SetUserDisabledRequest) GetDisabled() bool {
 	return false
 }
 
+func (x *SetUserDisabledRequest) GetActingUserId() string {
+	if x != nil {
+		return x.ActingUserId
+	}
+	return ""
+}
+
 type SetUserDisabledResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
@@ -5973,7 +6226,7 @@ type SetUserDisabledResponse struct {
 
 func (x *SetUserDisabledResponse) Reset() {
 	*x = SetUserDisabledResponse{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[117]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5985,7 +6238,7 @@ func (x *SetUserDisabledResponse) String() string {
 func (*SetUserDisabledResponse) ProtoMessage() {}
 
 func (x *SetUserDisabledResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[117]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5998,7 +6251,7 @@ func (x *SetUserDisabledResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetUserDisabledResponse.ProtoReflect.Descriptor instead.
 func (*SetUserDisabledResponse) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{117}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *SetUserDisabledResponse) GetUser() *User {
@@ -6020,7 +6273,7 @@ type VerifyApiTokenRequest struct {
 
 func (x *VerifyApiTokenRequest) Reset() {
 	*x = VerifyApiTokenRequest{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[118]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6032,7 +6285,7 @@ func (x *VerifyApiTokenRequest) String() string {
 func (*VerifyApiTokenRequest) ProtoMessage() {}
 
 func (x *VerifyApiTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[118]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6045,7 +6298,7 @@ func (x *VerifyApiTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyApiTokenRequest.ProtoReflect.Descriptor instead.
 func (*VerifyApiTokenRequest) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{118}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *VerifyApiTokenRequest) GetToken() string {
@@ -6066,14 +6319,16 @@ type VerifyApiTokenResponse struct {
 	// name slug; unknown, colliding or ambiguous tokens resolve to nothing.
 	// This is the ONLY grant the gateway gives the caller; the raw scope
 	// string is informational. Empty => no groups (fail closed).
-	GroupNames    []string `protobuf:"bytes,5,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"`
+	GroupNames []string `protobuf:"bytes,5,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"`
+	// The ids of the same groups as group_names, in the same order.
+	GroupIds      []string `protobuf:"bytes,6,rep,name=group_ids,json=groupIds,proto3" json:"group_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VerifyApiTokenResponse) Reset() {
 	*x = VerifyApiTokenResponse{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[119]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6085,7 +6340,7 @@ func (x *VerifyApiTokenResponse) String() string {
 func (*VerifyApiTokenResponse) ProtoMessage() {}
 
 func (x *VerifyApiTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[119]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6098,7 +6353,7 @@ func (x *VerifyApiTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VerifyApiTokenResponse.ProtoReflect.Descriptor instead.
 func (*VerifyApiTokenResponse) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{119}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *VerifyApiTokenResponse) GetServiceAccountId() string {
@@ -6136,6 +6391,13 @@ func (x *VerifyApiTokenResponse) GetGroupNames() []string {
 	return nil
 }
 
+func (x *VerifyApiTokenResponse) GetGroupIds() []string {
+	if x != nil {
+		return x.GroupIds
+	}
+	return nil
+}
+
 // OIDC client linkage: bind/unbind an Ory Hydra OAuth2 client
 // (issuer, subject=client_id) to a service account, and resolve it back on
 // the gateway's machine-auth path.
@@ -6157,7 +6419,7 @@ type LinkOidcClientRequest struct {
 
 func (x *LinkOidcClientRequest) Reset() {
 	*x = LinkOidcClientRequest{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[120]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6169,7 +6431,7 @@ func (x *LinkOidcClientRequest) String() string {
 func (*LinkOidcClientRequest) ProtoMessage() {}
 
 func (x *LinkOidcClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[120]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6182,7 +6444,7 @@ func (x *LinkOidcClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkOidcClientRequest.ProtoReflect.Descriptor instead.
 func (*LinkOidcClientRequest) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{120}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *LinkOidcClientRequest) GetServiceAccountId() string {
@@ -6229,7 +6491,7 @@ type LinkOidcClientResponse struct {
 
 func (x *LinkOidcClientResponse) Reset() {
 	*x = LinkOidcClientResponse{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[121]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6241,7 +6503,7 @@ func (x *LinkOidcClientResponse) String() string {
 func (*LinkOidcClientResponse) ProtoMessage() {}
 
 func (x *LinkOidcClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[121]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6254,7 +6516,7 @@ func (x *LinkOidcClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkOidcClientResponse.ProtoReflect.Descriptor instead.
 func (*LinkOidcClientResponse) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{121}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *LinkOidcClientResponse) GetServiceAccount() *ServiceAccount {
@@ -6274,7 +6536,7 @@ type UnlinkOidcClientRequest struct {
 
 func (x *UnlinkOidcClientRequest) Reset() {
 	*x = UnlinkOidcClientRequest{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[122]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6286,7 +6548,7 @@ func (x *UnlinkOidcClientRequest) String() string {
 func (*UnlinkOidcClientRequest) ProtoMessage() {}
 
 func (x *UnlinkOidcClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[122]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6299,7 +6561,7 @@ func (x *UnlinkOidcClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkOidcClientRequest.ProtoReflect.Descriptor instead.
 func (*UnlinkOidcClientRequest) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{122}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *UnlinkOidcClientRequest) GetServiceAccountId() string {
@@ -6325,7 +6587,7 @@ type UnlinkOidcClientResponse struct {
 
 func (x *UnlinkOidcClientResponse) Reset() {
 	*x = UnlinkOidcClientResponse{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[123]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6337,7 +6599,7 @@ func (x *UnlinkOidcClientResponse) String() string {
 func (*UnlinkOidcClientResponse) ProtoMessage() {}
 
 func (x *UnlinkOidcClientResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[123]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6350,7 +6612,7 @@ func (x *UnlinkOidcClientResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkOidcClientResponse.ProtoReflect.Descriptor instead.
 func (*UnlinkOidcClientResponse) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{123}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *UnlinkOidcClientResponse) GetServiceAccount() *ServiceAccount {
@@ -6377,7 +6639,7 @@ type ResolveServiceAccountByOidcRequest struct {
 
 func (x *ResolveServiceAccountByOidcRequest) Reset() {
 	*x = ResolveServiceAccountByOidcRequest{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[124]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6389,7 +6651,7 @@ func (x *ResolveServiceAccountByOidcRequest) String() string {
 func (*ResolveServiceAccountByOidcRequest) ProtoMessage() {}
 
 func (x *ResolveServiceAccountByOidcRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[124]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6402,7 +6664,7 @@ func (x *ResolveServiceAccountByOidcRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ResolveServiceAccountByOidcRequest.ProtoReflect.Descriptor instead.
 func (*ResolveServiceAccountByOidcRequest) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{124}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *ResolveServiceAccountByOidcRequest) GetOidcIssuer() string {
@@ -6439,14 +6701,16 @@ type ResolveServiceAccountByOidcResponse struct {
 	// token matches a directory group by ID or by name slug), INTERSECT
 	// allowed_groups. This is the ONLY grant the gateway gives the client.
 	// Empty => no groups (fail closed).
-	GroupNames    []string `protobuf:"bytes,6,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"`
+	GroupNames []string `protobuf:"bytes,6,rep,name=group_names,json=groupNames,proto3" json:"group_names,omitempty"`
+	// The ids of the same groups as group_names, in the same order.
+	GroupIds      []string `protobuf:"bytes,7,rep,name=group_ids,json=groupIds,proto3" json:"group_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResolveServiceAccountByOidcResponse) Reset() {
 	*x = ResolveServiceAccountByOidcResponse{}
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[125]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6458,7 +6722,7 @@ func (x *ResolveServiceAccountByOidcResponse) String() string {
 func (*ResolveServiceAccountByOidcResponse) ProtoMessage() {}
 
 func (x *ResolveServiceAccountByOidcResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[125]
+	mi := &file_sneakers_identity_v1_identity_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6471,7 +6735,7 @@ func (x *ResolveServiceAccountByOidcResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ResolveServiceAccountByOidcResponse.ProtoReflect.Descriptor instead.
 func (*ResolveServiceAccountByOidcResponse) Descriptor() ([]byte, []int) {
-	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{125}
+	return file_sneakers_identity_v1_identity_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *ResolveServiceAccountByOidcResponse) GetValid() bool {
@@ -6516,6 +6780,13 @@ func (x *ResolveServiceAccountByOidcResponse) GetGroupNames() []string {
 	return nil
 }
 
+func (x *ResolveServiceAccountByOidcResponse) GetGroupIds() []string {
+	if x != nil {
+		return x.GroupIds
+	}
+	return nil
+}
+
 var File_sneakers_identity_v1_identity_proto protoreflect.FileDescriptor
 
 const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
@@ -6548,9 +6819,10 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x0fGetGroupRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"E\n" +
 	"\x10GetGroupResponse\x121\n" +
-	"\x05group\x18\x01 \x01(\v2\x1b.sneakers.identity.v1.GroupR\x05group\"(\n" +
+	"\x05group\x18\x01 \x01(\v2\x1b.sneakers.identity.v1.GroupR\x05group\"N\n" +
 	"\x12CreateGroupRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"H\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12$\n" +
+	"\x0eacting_user_id\x18\x02 \x01(\tR\factingUserId\"H\n" +
 	"\x13CreateGroupResponse\x121\n" +
 	"\x05group\x18\x01 \x01(\v2\x1b.sneakers.identity.v1.GroupR\x05group\"@\n" +
 	"\x12SearchUsersRequest\x12\x14\n" +
@@ -6564,30 +6836,34 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"T\n" +
 	"\x19ResolveUserLabelsResponse\x127\n" +
-	"\x06labels\x18\x01 \x03(\v2\x1f.sneakers.identity.v1.UserLabelR\x06labels\"[\n" +
+	"\x06labels\x18\x01 \x03(\v2\x1f.sneakers.identity.v1.UserLabelR\x06labels\"\x81\x01\n" +
 	"\x19PreCreateLocalUserRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
-	"\x05roles\x18\x03 \x03(\tR\x05roles\"L\n" +
+	"\x05roles\x18\x03 \x03(\tR\x05roles\x12$\n" +
+	"\x0eacting_user_id\x18\x04 \x01(\tR\factingUserId\"L\n" +
 	"\x1aPreCreateLocalUserResponse\x12.\n" +
-	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"z\n" +
+	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"\xa0\x01\n" +
 	"\x16CreateLocalUserRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\"I\n" +
+	"\bpassword\x18\x04 \x01(\tR\bpassword\x12$\n" +
+	"\x0eacting_user_id\x18\x05 \x01(\tR\factingUserId\"I\n" +
 	"\x17CreateLocalUserResponse\x12.\n" +
-	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"D\n" +
+	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"j\n" +
 	"\x13SetUserRolesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
-	"\x05roles\x18\x02 \x03(\tR\x05roles\"F\n" +
+	"\x05roles\x18\x02 \x03(\tR\x05roles\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"F\n" +
 	"\x14SetUserRolesResponse\x12.\n" +
-	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"r\n" +
+	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"\x98\x01\n" +
 	"\x11UpdateUserRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1a\n" +
-	"\busername\x18\x04 \x01(\tR\busername\"D\n" +
+	"\busername\x18\x04 \x01(\tR\busername\x12$\n" +
+	"\x0eacting_user_id\x18\x05 \x01(\tR\factingUserId\"D\n" +
 	"\x12UpdateUserResponse\x12.\n" +
 	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"\x92\x01\n" +
 	"$AdoptOrProvisionFederatedUserRequest\x12\x14\n" +
@@ -6620,16 +6896,18 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\"G\n" +
 	"\x15BootstrapRootResponse\x12.\n" +
-	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"K\n" +
+	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"q\n" +
 	"\x15AddGroupMemberRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
-	"\bgroup_id\x18\x02 \x01(\tR\agroupId\"L\n" +
+	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"L\n" +
 	"\x16AddGroupMemberResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
-	"\bgroup_id\x18\x02 \x01(\tR\agroupId\"N\n" +
+	"\bgroup_id\x18\x02 \x01(\tR\agroupId\"t\n" +
 	"\x18RemoveGroupMemberRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
-	"\bgroup_id\x18\x02 \x01(\tR\agroupId\"O\n" +
+	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"O\n" +
 	"\x19RemoveGroupMemberResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
 	"\bgroup_id\x18\x02 \x01(\tR\agroupId\"4\n" +
@@ -6654,12 +6932,13 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x14UserAdGroupsResponse\x12\x14\n" +
 	"\x05names\x18\x01 \x03(\tR\x05names:\x02\x18\x01\";\n" +
 	"\x19ResolveUserContextRequest\x12\x18\n" +
-	"\asubject\x18\x02 \x01(\tR\asubjectJ\x04\b\x01\x10\x02\"\x83\x01\n" +
+	"\asubject\x18\x02 \x01(\tR\asubjectJ\x04\b\x01\x10\x02\"\xa0\x01\n" +
 	"\x1aResolveUserContextResponse\x12.\n" +
 	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\x12\x1f\n" +
 	"\vgroup_names\x18\x02 \x03(\tR\n" +
 	"groupNames\x12\x14\n" +
-	"\x05roles\x18\x03 \x03(\tR\x05roles\",\n" +
+	"\x05roles\x18\x03 \x03(\tR\x05roles\x12\x1b\n" +
+	"\tgroup_ids\x18\x04 \x03(\tR\bgroupIds\",\n" +
 	"\x11EnrollTotpRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"M\n" +
 	"\x12EnrollTotpResponse\x12\x16\n" +
@@ -6678,9 +6957,10 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x13GetMfaStatusRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"2\n" +
 	"\x14GetMfaStatusResponse\x12\x1a\n" +
-	"\benrolled\x18\x01 \x01(\bR\benrolled\"-\n" +
+	"\benrolled\x18\x01 \x01(\bR\benrolled\"S\n" +
 	"\x12DisableTotpRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x15\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12$\n" +
+	"\x0eacting_user_id\x18\x02 \x01(\tR\factingUserId\"\x15\n" +
 	"\x13DisableTotpResponse\"H\n" +
 	"\x13SendEmailOtpRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x18\n" +
@@ -6749,10 +7029,11 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x1eListWebauthnCredentialsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"m\n" +
 	"\x1fListWebauthnCredentialsResponse\x12J\n" +
-	"\vcredentials\x18\x01 \x03(\v2(.sneakers.identity.v1.WebauthnCredentialR\vcredentials\"_\n" +
+	"\vcredentials\x18\x01 \x03(\v2(.sneakers.identity.v1.WebauthnCredentialR\vcredentials\"\x85\x01\n" +
 	"\x1fRemoveWebauthnCredentialRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12#\n" +
-	"\rcredential_id\x18\x02 \x01(\tR\fcredentialId\"\"\n" +
+	"\rcredential_id\x18\x02 \x01(\tR\fcredentialId\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"\"\n" +
 	" RemoveWebauthnCredentialResponse\"A\n" +
 	"\n" +
 	"UserFactor\x12\x12\n" +
@@ -6762,10 +7043,11 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x16ListUserFactorsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"U\n" +
 	"\x17ListUserFactorsResponse\x12:\n" +
-	"\afactors\x18\x01 \x03(\v2 .sneakers.identity.v1.UserFactorR\afactors\"B\n" +
+	"\afactors\x18\x01 \x03(\v2 .sneakers.identity.v1.UserFactorR\afactors\"h\n" +
 	"\x13RemoveFactorRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
-	"\x04kind\x18\x02 \x01(\tR\x04kind\"\x16\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"\x16\n" +
 	"\x14RemoveFactorResponse\"\xad\x02\n" +
 	"\x0eServiceAccount\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -6797,9 +7079,10 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x0fservice_account\x18\x01 \x01(\v2$.sneakers.identity.v1.ServiceAccountR\x0eserviceAccount\"\x1c\n" +
 	"\x1aListServiceAccountsRequest\"n\n" +
 	"\x1bListServiceAccountsResponse\x12O\n" +
-	"\x10service_accounts\x18\x01 \x03(\v2$.sneakers.identity.v1.ServiceAccountR\x0fserviceAccounts\".\n" +
+	"\x10service_accounts\x18\x01 \x03(\v2$.sneakers.identity.v1.ServiceAccountR\x0fserviceAccounts\"T\n" +
 	"\x1cDisableServiceAccountRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"n\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\x0eacting_user_id\x18\x02 \x01(\tR\factingUserId\"n\n" +
 	"\x1dDisableServiceAccountResponse\x12M\n" +
 	"\x0fservice_account\x18\x01 \x01(\v2$.sneakers.identity.v1.ServiceAccountR\x0eserviceAccount\"\xa0\x01\n" +
 	"\x13MintApiTokenRequest\x12,\n" +
@@ -6814,11 +7097,12 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x14ListApiTokensRequest\x12,\n" +
 	"\x12service_account_id\x18\x01 \x01(\tR\x10serviceAccountId\"O\n" +
 	"\x15ListApiTokensResponse\x126\n" +
-	"\x06tokens\x18\x01 \x03(\v2\x1e.sneakers.identity.v1.ApiTokenR\x06tokens\"'\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x1e.sneakers.identity.v1.ApiTokenR\x06tokens\"M\n" +
 	"\x15RevokeApiTokenRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"L\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\x0eacting_user_id\x18\x02 \x01(\tR\factingUserId\"L\n" +
 	"\x16RevokeApiTokenResponse\x122\n" +
-	"\x04meta\x18\x01 \x01(\v2\x1e.sneakers.identity.v1.ApiTokenR\x04meta\"\x8e\x02\n" +
+	"\x04meta\x18\x01 \x01(\v2\x1e.sneakers.identity.v1.ApiTokenR\x04meta\"\xaf\x02\n" +
 	"\tUserToken\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x14\n" +
@@ -6828,47 +7112,61 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x0fcreated_at_unix\x18\x05 \x01(\x03R\rcreatedAtUnix\x12)\n" +
 	"\x11last_used_at_unix\x18\x06 \x01(\x03R\x0elastUsedAtUnix\x12&\n" +
 	"\x0frevoked_at_unix\x18\a \x01(\x03R\rrevokedAtUnix\x12&\n" +
-	"\x0fexpires_at_unix\x18\b \x01(\x03R\rexpiresAtUnix\"\x8e\x01\n" +
+	"\x0fexpires_at_unix\x18\b \x01(\x03R\rexpiresAtUnix\x12\x1f\n" +
+	"\vclient_kind\x18\t \x01(\tR\n" +
+	"clientKind\"\xaf\x01\n" +
 	"\x14MintUserTokenRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x1f\n" +
 	"\vclient_name\x18\x03 \x01(\tR\n" +
 	"clientName\x12&\n" +
-	"\x0fexpires_at_unix\x18\x04 \x01(\x03R\rexpiresAtUnix\"b\n" +
+	"\x0fexpires_at_unix\x18\x04 \x01(\x03R\rexpiresAtUnix\x12\x1f\n" +
+	"\vclient_kind\x18\x05 \x01(\tR\n" +
+	"clientKind\"b\n" +
 	"\x15MintUserTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x123\n" +
 	"\x04meta\x18\x02 \x01(\v2\x1f.sneakers.identity.v1.UserTokenR\x04meta\"0\n" +
 	"\x15ListUserTokensRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"Q\n" +
 	"\x16ListUserTokensResponse\x127\n" +
-	"\x06tokens\x18\x01 \x03(\v2\x1f.sneakers.identity.v1.UserTokenR\x06tokens\"A\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x1f.sneakers.identity.v1.UserTokenR\x06tokens\"g\n" +
 	"\x16RevokeUserTokenRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\"N\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"N\n" +
 	"\x17RevokeUserTokenResponse\x123\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1f.sneakers.identity.v1.UserTokenR\x04meta\".\n" +
 	"\x16VerifyUserTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"\x9b\x01\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\xd9\x01\n" +
 	"\x17VerifyUserTokenResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x19\n" +
 	"\btoken_id\x18\x02 \x01(\tR\atokenId\x12.\n" +
 	"\x04user\x18\x03 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\x12\x1f\n" +
 	"\vgroup_names\x18\x04 \x03(\tR\n" +
-	"groupNames\"M\n" +
+	"groupNames\x12\x1b\n" +
+	"\tgroup_ids\x18\x05 \x03(\tR\bgroupIds\x12\x1f\n" +
+	"\vclient_kind\x18\x06 \x01(\tR\n" +
+	"clientKind\"5\n" +
+	"\x1fRevokeTokensByClientKindRequest\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\"<\n" +
+	" RevokeTokensByClientKindResponse\x12\x18\n" +
+	"\arevoked\x18\x01 \x01(\x03R\arevoked\"s\n" +
 	"\x16SetUserDisabledRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
-	"\bdisabled\x18\x02 \x01(\bR\bdisabled\"I\n" +
+	"\bdisabled\x18\x02 \x01(\bR\bdisabled\x12$\n" +
+	"\x0eacting_user_id\x18\x03 \x01(\tR\factingUserId\"I\n" +
 	"\x17SetUserDisabledResponse\x12.\n" +
 	"\x04user\x18\x01 \x01(\v2\x1a.sneakers.identity.v1.UserR\x04user\"-\n" +
 	"\x15VerifyApiTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"\xa7\x01\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\xc4\x01\n" +
 	"\x16VerifyApiTokenResponse\x12,\n" +
 	"\x12service_account_id\x18\x01 \x01(\tR\x10serviceAccountId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12\x14\n" +
 	"\x05valid\x18\x04 \x01(\bR\x05valid\x12\x1f\n" +
 	"\vgroup_names\x18\x05 \x03(\tR\n" +
-	"groupNames\"\xd3\x01\n" +
+	"groupNames\x12\x1b\n" +
+	"\tgroup_ids\x18\x06 \x03(\tR\bgroupIds\"\xd3\x01\n" +
 	"\x15LinkOidcClientRequest\x12,\n" +
 	"\x12service_account_id\x18\x01 \x01(\tR\x10serviceAccountId\x12\x1f\n" +
 	"\voidc_issuer\x18\x02 \x01(\tR\n" +
@@ -6887,7 +7185,7 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\voidc_issuer\x18\x01 \x01(\tR\n" +
 	"oidcIssuer\x12!\n" +
 	"\foidc_subject\x18\x02 \x01(\tR\voidcSubject\x12\x14\n" +
-	"\x05scope\x18\x03 \x01(\tR\x05scope\"\xdb\x01\n" +
+	"\x05scope\x18\x03 \x01(\tR\x05scope\"\xf8\x01\n" +
 	"#ResolveServiceAccountByOidcResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12,\n" +
 	"\x12service_account_id\x18\x02 \x01(\tR\x10serviceAccountId\x12\x12\n" +
@@ -6895,7 +7193,8 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\x05scope\x18\x04 \x01(\tR\x05scope\x12%\n" +
 	"\x0eallowed_groups\x18\x05 \x03(\tR\rallowedGroups\x12\x1f\n" +
 	"\vgroup_names\x18\x06 \x03(\tR\n" +
-	"groupNames2\x815\n" +
+	"groupNames\x12\x1b\n" +
+	"\tgroup_ids\x18\a \x03(\tR\bgroupIds2\x8d6\n" +
 	"\x0fIdentityService\x12\\\n" +
 	"\tListUsers\x12&.sneakers.identity.v1.ListUsersRequest\x1a'.sneakers.identity.v1.ListUsersResponse\x12V\n" +
 	"\aGetUser\x12$.sneakers.identity.v1.GetUserRequest\x1a%.sneakers.identity.v1.GetUserResponse\x12_\n" +
@@ -6955,7 +7254,8 @@ const file_sneakers_identity_v1_identity_proto_rawDesc = "" +
 	"\rMintUserToken\x12*.sneakers.identity.v1.MintUserTokenRequest\x1a+.sneakers.identity.v1.MintUserTokenResponse\x12k\n" +
 	"\x0eListUserTokens\x12+.sneakers.identity.v1.ListUserTokensRequest\x1a,.sneakers.identity.v1.ListUserTokensResponse\x12n\n" +
 	"\x0fRevokeUserToken\x12,.sneakers.identity.v1.RevokeUserTokenRequest\x1a-.sneakers.identity.v1.RevokeUserTokenResponse\x12n\n" +
-	"\x0fVerifyUserToken\x12,.sneakers.identity.v1.VerifyUserTokenRequest\x1a-.sneakers.identity.v1.VerifyUserTokenResponse\x12n\n" +
+	"\x0fVerifyUserToken\x12,.sneakers.identity.v1.VerifyUserTokenRequest\x1a-.sneakers.identity.v1.VerifyUserTokenResponse\x12\x89\x01\n" +
+	"\x18RevokeTokensByClientKind\x125.sneakers.identity.v1.RevokeTokensByClientKindRequest\x1a6.sneakers.identity.v1.RevokeTokensByClientKindResponse\x12n\n" +
 	"\x0fSetUserDisabled\x12,.sneakers.identity.v1.SetUserDisabledRequest\x1a-.sneakers.identity.v1.SetUserDisabledResponse\x12k\n" +
 	"\x0eLinkOidcClient\x12+.sneakers.identity.v1.LinkOidcClientRequest\x1a,.sneakers.identity.v1.LinkOidcClientResponse\x12q\n" +
 	"\x10UnlinkOidcClient\x12-.sneakers.identity.v1.UnlinkOidcClientRequest\x1a..sneakers.identity.v1.UnlinkOidcClientResponse\x12\x92\x01\n" +
@@ -6973,7 +7273,7 @@ func file_sneakers_identity_v1_identity_proto_rawDescGZIP() []byte {
 	return file_sneakers_identity_v1_identity_proto_rawDescData
 }
 
-var file_sneakers_identity_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 126)
+var file_sneakers_identity_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 128)
 var file_sneakers_identity_v1_identity_proto_goTypes = []any{
 	(*User)(nil),                                  // 0: sneakers.identity.v1.User
 	(*Group)(nil),                                 // 1: sneakers.identity.v1.Group
@@ -7091,16 +7391,18 @@ var file_sneakers_identity_v1_identity_proto_goTypes = []any{
 	(*RevokeUserTokenResponse)(nil),               // 113: sneakers.identity.v1.RevokeUserTokenResponse
 	(*VerifyUserTokenRequest)(nil),                // 114: sneakers.identity.v1.VerifyUserTokenRequest
 	(*VerifyUserTokenResponse)(nil),               // 115: sneakers.identity.v1.VerifyUserTokenResponse
-	(*SetUserDisabledRequest)(nil),                // 116: sneakers.identity.v1.SetUserDisabledRequest
-	(*SetUserDisabledResponse)(nil),               // 117: sneakers.identity.v1.SetUserDisabledResponse
-	(*VerifyApiTokenRequest)(nil),                 // 118: sneakers.identity.v1.VerifyApiTokenRequest
-	(*VerifyApiTokenResponse)(nil),                // 119: sneakers.identity.v1.VerifyApiTokenResponse
-	(*LinkOidcClientRequest)(nil),                 // 120: sneakers.identity.v1.LinkOidcClientRequest
-	(*LinkOidcClientResponse)(nil),                // 121: sneakers.identity.v1.LinkOidcClientResponse
-	(*UnlinkOidcClientRequest)(nil),               // 122: sneakers.identity.v1.UnlinkOidcClientRequest
-	(*UnlinkOidcClientResponse)(nil),              // 123: sneakers.identity.v1.UnlinkOidcClientResponse
-	(*ResolveServiceAccountByOidcRequest)(nil),    // 124: sneakers.identity.v1.ResolveServiceAccountByOidcRequest
-	(*ResolveServiceAccountByOidcResponse)(nil),   // 125: sneakers.identity.v1.ResolveServiceAccountByOidcResponse
+	(*RevokeTokensByClientKindRequest)(nil),       // 116: sneakers.identity.v1.RevokeTokensByClientKindRequest
+	(*RevokeTokensByClientKindResponse)(nil),      // 117: sneakers.identity.v1.RevokeTokensByClientKindResponse
+	(*SetUserDisabledRequest)(nil),                // 118: sneakers.identity.v1.SetUserDisabledRequest
+	(*SetUserDisabledResponse)(nil),               // 119: sneakers.identity.v1.SetUserDisabledResponse
+	(*VerifyApiTokenRequest)(nil),                 // 120: sneakers.identity.v1.VerifyApiTokenRequest
+	(*VerifyApiTokenResponse)(nil),                // 121: sneakers.identity.v1.VerifyApiTokenResponse
+	(*LinkOidcClientRequest)(nil),                 // 122: sneakers.identity.v1.LinkOidcClientRequest
+	(*LinkOidcClientResponse)(nil),                // 123: sneakers.identity.v1.LinkOidcClientResponse
+	(*UnlinkOidcClientRequest)(nil),               // 124: sneakers.identity.v1.UnlinkOidcClientRequest
+	(*UnlinkOidcClientResponse)(nil),              // 125: sneakers.identity.v1.UnlinkOidcClientResponse
+	(*ResolveServiceAccountByOidcRequest)(nil),    // 126: sneakers.identity.v1.ResolveServiceAccountByOidcRequest
+	(*ResolveServiceAccountByOidcResponse)(nil),   // 127: sneakers.identity.v1.ResolveServiceAccountByOidcResponse
 }
 var file_sneakers_identity_v1_identity_proto_depIdxs = []int32{
 	0,   // 0: sneakers.identity.v1.ListUsersResponse.users:type_name -> sneakers.identity.v1.User
@@ -7187,76 +7489,78 @@ var file_sneakers_identity_v1_identity_proto_depIdxs = []int32{
 	101, // 81: sneakers.identity.v1.IdentityService.MintApiToken:input_type -> sneakers.identity.v1.MintApiTokenRequest
 	103, // 82: sneakers.identity.v1.IdentityService.ListApiTokens:input_type -> sneakers.identity.v1.ListApiTokensRequest
 	105, // 83: sneakers.identity.v1.IdentityService.RevokeApiToken:input_type -> sneakers.identity.v1.RevokeApiTokenRequest
-	118, // 84: sneakers.identity.v1.IdentityService.VerifyApiToken:input_type -> sneakers.identity.v1.VerifyApiTokenRequest
+	120, // 84: sneakers.identity.v1.IdentityService.VerifyApiToken:input_type -> sneakers.identity.v1.VerifyApiTokenRequest
 	108, // 85: sneakers.identity.v1.IdentityService.MintUserToken:input_type -> sneakers.identity.v1.MintUserTokenRequest
 	110, // 86: sneakers.identity.v1.IdentityService.ListUserTokens:input_type -> sneakers.identity.v1.ListUserTokensRequest
 	112, // 87: sneakers.identity.v1.IdentityService.RevokeUserToken:input_type -> sneakers.identity.v1.RevokeUserTokenRequest
 	114, // 88: sneakers.identity.v1.IdentityService.VerifyUserToken:input_type -> sneakers.identity.v1.VerifyUserTokenRequest
-	116, // 89: sneakers.identity.v1.IdentityService.SetUserDisabled:input_type -> sneakers.identity.v1.SetUserDisabledRequest
-	120, // 90: sneakers.identity.v1.IdentityService.LinkOidcClient:input_type -> sneakers.identity.v1.LinkOidcClientRequest
-	122, // 91: sneakers.identity.v1.IdentityService.UnlinkOidcClient:input_type -> sneakers.identity.v1.UnlinkOidcClientRequest
-	124, // 92: sneakers.identity.v1.IdentityService.ResolveServiceAccountByOidc:input_type -> sneakers.identity.v1.ResolveServiceAccountByOidcRequest
-	3,   // 93: sneakers.identity.v1.IdentityService.ListUsers:output_type -> sneakers.identity.v1.ListUsersResponse
-	5,   // 94: sneakers.identity.v1.IdentityService.GetUser:output_type -> sneakers.identity.v1.GetUserResponse
-	7,   // 95: sneakers.identity.v1.IdentityService.ListGroups:output_type -> sneakers.identity.v1.ListGroupsResponse
-	9,   // 96: sneakers.identity.v1.IdentityService.GetGroup:output_type -> sneakers.identity.v1.GetGroupResponse
-	11,  // 97: sneakers.identity.v1.IdentityService.CreateGroup:output_type -> sneakers.identity.v1.CreateGroupResponse
-	13,  // 98: sneakers.identity.v1.IdentityService.SearchUsers:output_type -> sneakers.identity.v1.SearchUsersResponse
-	16,  // 99: sneakers.identity.v1.IdentityService.ResolveUserLabels:output_type -> sneakers.identity.v1.ResolveUserLabelsResponse
-	18,  // 100: sneakers.identity.v1.IdentityService.PreCreateLocalUser:output_type -> sneakers.identity.v1.PreCreateLocalUserResponse
-	20,  // 101: sneakers.identity.v1.IdentityService.CreateLocalUser:output_type -> sneakers.identity.v1.CreateLocalUserResponse
-	22,  // 102: sneakers.identity.v1.IdentityService.SetUserRoles:output_type -> sneakers.identity.v1.SetUserRolesResponse
-	24,  // 103: sneakers.identity.v1.IdentityService.UpdateUser:output_type -> sneakers.identity.v1.UpdateUserResponse
-	26,  // 104: sneakers.identity.v1.IdentityService.AdoptOrProvisionFederatedUser:output_type -> sneakers.identity.v1.AdoptOrProvisionFederatedUserResponse
-	28,  // 105: sneakers.identity.v1.IdentityService.SendTransactionalEmail:output_type -> sneakers.identity.v1.SendTransactionalEmailResponse
-	30,  // 106: sneakers.identity.v1.IdentityService.GetUserBySubject:output_type -> sneakers.identity.v1.GetUserBySubjectResponse
-	32,  // 107: sneakers.identity.v1.IdentityService.ResolveUserByEmail:output_type -> sneakers.identity.v1.ResolveUserByEmailResponse
-	34,  // 108: sneakers.identity.v1.IdentityService.GetSetupState:output_type -> sneakers.identity.v1.GetSetupStateResponse
-	36,  // 109: sneakers.identity.v1.IdentityService.BootstrapRoot:output_type -> sneakers.identity.v1.BootstrapRootResponse
-	38,  // 110: sneakers.identity.v1.IdentityService.AddGroupMember:output_type -> sneakers.identity.v1.AddGroupMemberResponse
-	40,  // 111: sneakers.identity.v1.IdentityService.RemoveGroupMember:output_type -> sneakers.identity.v1.RemoveGroupMemberResponse
-	42,  // 112: sneakers.identity.v1.IdentityService.ListGroupMembers:output_type -> sneakers.identity.v1.ListGroupMembersResponse
-	44,  // 113: sneakers.identity.v1.IdentityService.ListUserGroups:output_type -> sneakers.identity.v1.ListUserGroupsResponse
-	46,  // 114: sneakers.identity.v1.IdentityService.SetUserAdGroups:output_type -> sneakers.identity.v1.SetUserAdGroupsResponse
-	48,  // 115: sneakers.identity.v1.IdentityService.ListUsersByAdGroups:output_type -> sneakers.identity.v1.ListUsersByAdGroupsResponse
-	50,  // 116: sneakers.identity.v1.IdentityService.UserAdGroups:output_type -> sneakers.identity.v1.UserAdGroupsResponse
-	52,  // 117: sneakers.identity.v1.IdentityService.ResolveUserContext:output_type -> sneakers.identity.v1.ResolveUserContextResponse
-	54,  // 118: sneakers.identity.v1.IdentityService.EnrollTotp:output_type -> sneakers.identity.v1.EnrollTotpResponse
-	56,  // 119: sneakers.identity.v1.IdentityService.ConfirmTotp:output_type -> sneakers.identity.v1.ConfirmTotpResponse
-	58,  // 120: sneakers.identity.v1.IdentityService.VerifyTotp:output_type -> sneakers.identity.v1.VerifyTotpResponse
-	60,  // 121: sneakers.identity.v1.IdentityService.GetMfaStatus:output_type -> sneakers.identity.v1.GetMfaStatusResponse
-	62,  // 122: sneakers.identity.v1.IdentityService.DisableTotp:output_type -> sneakers.identity.v1.DisableTotpResponse
-	68,  // 123: sneakers.identity.v1.IdentityService.RequestPasswordReset:output_type -> sneakers.identity.v1.RequestPasswordResetResponse
-	70,  // 124: sneakers.identity.v1.IdentityService.ConfirmPasswordReset:output_type -> sneakers.identity.v1.ConfirmPasswordResetResponse
-	72,  // 125: sneakers.identity.v1.IdentityService.RequestEmailVerification:output_type -> sneakers.identity.v1.RequestEmailVerificationResponse
-	74,  // 126: sneakers.identity.v1.IdentityService.ConfirmEmailVerification:output_type -> sneakers.identity.v1.ConfirmEmailVerificationResponse
-	76,  // 127: sneakers.identity.v1.IdentityService.WebauthnRegisterBegin:output_type -> sneakers.identity.v1.WebauthnRegisterBeginResponse
-	78,  // 128: sneakers.identity.v1.IdentityService.WebauthnRegisterFinish:output_type -> sneakers.identity.v1.WebauthnRegisterFinishResponse
-	80,  // 129: sneakers.identity.v1.IdentityService.WebauthnAssertBegin:output_type -> sneakers.identity.v1.WebauthnAssertBeginResponse
-	82,  // 130: sneakers.identity.v1.IdentityService.WebauthnAssertFinish:output_type -> sneakers.identity.v1.WebauthnAssertFinishResponse
-	85,  // 131: sneakers.identity.v1.IdentityService.ListWebauthnCredentials:output_type -> sneakers.identity.v1.ListWebauthnCredentialsResponse
-	87,  // 132: sneakers.identity.v1.IdentityService.RemoveWebauthnCredential:output_type -> sneakers.identity.v1.RemoveWebauthnCredentialResponse
-	64,  // 133: sneakers.identity.v1.IdentityService.SendEmailOtp:output_type -> sneakers.identity.v1.SendEmailOtpResponse
-	66,  // 134: sneakers.identity.v1.IdentityService.VerifyEmailOtp:output_type -> sneakers.identity.v1.VerifyEmailOtpResponse
-	90,  // 135: sneakers.identity.v1.IdentityService.ListUserFactors:output_type -> sneakers.identity.v1.ListUserFactorsResponse
-	92,  // 136: sneakers.identity.v1.IdentityService.RemoveFactor:output_type -> sneakers.identity.v1.RemoveFactorResponse
-	96,  // 137: sneakers.identity.v1.IdentityService.CreateServiceAccount:output_type -> sneakers.identity.v1.CreateServiceAccountResponse
-	98,  // 138: sneakers.identity.v1.IdentityService.ListServiceAccounts:output_type -> sneakers.identity.v1.ListServiceAccountsResponse
-	100, // 139: sneakers.identity.v1.IdentityService.DisableServiceAccount:output_type -> sneakers.identity.v1.DisableServiceAccountResponse
-	102, // 140: sneakers.identity.v1.IdentityService.MintApiToken:output_type -> sneakers.identity.v1.MintApiTokenResponse
-	104, // 141: sneakers.identity.v1.IdentityService.ListApiTokens:output_type -> sneakers.identity.v1.ListApiTokensResponse
-	106, // 142: sneakers.identity.v1.IdentityService.RevokeApiToken:output_type -> sneakers.identity.v1.RevokeApiTokenResponse
-	119, // 143: sneakers.identity.v1.IdentityService.VerifyApiToken:output_type -> sneakers.identity.v1.VerifyApiTokenResponse
-	109, // 144: sneakers.identity.v1.IdentityService.MintUserToken:output_type -> sneakers.identity.v1.MintUserTokenResponse
-	111, // 145: sneakers.identity.v1.IdentityService.ListUserTokens:output_type -> sneakers.identity.v1.ListUserTokensResponse
-	113, // 146: sneakers.identity.v1.IdentityService.RevokeUserToken:output_type -> sneakers.identity.v1.RevokeUserTokenResponse
-	115, // 147: sneakers.identity.v1.IdentityService.VerifyUserToken:output_type -> sneakers.identity.v1.VerifyUserTokenResponse
-	117, // 148: sneakers.identity.v1.IdentityService.SetUserDisabled:output_type -> sneakers.identity.v1.SetUserDisabledResponse
-	121, // 149: sneakers.identity.v1.IdentityService.LinkOidcClient:output_type -> sneakers.identity.v1.LinkOidcClientResponse
-	123, // 150: sneakers.identity.v1.IdentityService.UnlinkOidcClient:output_type -> sneakers.identity.v1.UnlinkOidcClientResponse
-	125, // 151: sneakers.identity.v1.IdentityService.ResolveServiceAccountByOidc:output_type -> sneakers.identity.v1.ResolveServiceAccountByOidcResponse
-	93,  // [93:152] is the sub-list for method output_type
-	34,  // [34:93] is the sub-list for method input_type
+	116, // 89: sneakers.identity.v1.IdentityService.RevokeTokensByClientKind:input_type -> sneakers.identity.v1.RevokeTokensByClientKindRequest
+	118, // 90: sneakers.identity.v1.IdentityService.SetUserDisabled:input_type -> sneakers.identity.v1.SetUserDisabledRequest
+	122, // 91: sneakers.identity.v1.IdentityService.LinkOidcClient:input_type -> sneakers.identity.v1.LinkOidcClientRequest
+	124, // 92: sneakers.identity.v1.IdentityService.UnlinkOidcClient:input_type -> sneakers.identity.v1.UnlinkOidcClientRequest
+	126, // 93: sneakers.identity.v1.IdentityService.ResolveServiceAccountByOidc:input_type -> sneakers.identity.v1.ResolveServiceAccountByOidcRequest
+	3,   // 94: sneakers.identity.v1.IdentityService.ListUsers:output_type -> sneakers.identity.v1.ListUsersResponse
+	5,   // 95: sneakers.identity.v1.IdentityService.GetUser:output_type -> sneakers.identity.v1.GetUserResponse
+	7,   // 96: sneakers.identity.v1.IdentityService.ListGroups:output_type -> sneakers.identity.v1.ListGroupsResponse
+	9,   // 97: sneakers.identity.v1.IdentityService.GetGroup:output_type -> sneakers.identity.v1.GetGroupResponse
+	11,  // 98: sneakers.identity.v1.IdentityService.CreateGroup:output_type -> sneakers.identity.v1.CreateGroupResponse
+	13,  // 99: sneakers.identity.v1.IdentityService.SearchUsers:output_type -> sneakers.identity.v1.SearchUsersResponse
+	16,  // 100: sneakers.identity.v1.IdentityService.ResolveUserLabels:output_type -> sneakers.identity.v1.ResolveUserLabelsResponse
+	18,  // 101: sneakers.identity.v1.IdentityService.PreCreateLocalUser:output_type -> sneakers.identity.v1.PreCreateLocalUserResponse
+	20,  // 102: sneakers.identity.v1.IdentityService.CreateLocalUser:output_type -> sneakers.identity.v1.CreateLocalUserResponse
+	22,  // 103: sneakers.identity.v1.IdentityService.SetUserRoles:output_type -> sneakers.identity.v1.SetUserRolesResponse
+	24,  // 104: sneakers.identity.v1.IdentityService.UpdateUser:output_type -> sneakers.identity.v1.UpdateUserResponse
+	26,  // 105: sneakers.identity.v1.IdentityService.AdoptOrProvisionFederatedUser:output_type -> sneakers.identity.v1.AdoptOrProvisionFederatedUserResponse
+	28,  // 106: sneakers.identity.v1.IdentityService.SendTransactionalEmail:output_type -> sneakers.identity.v1.SendTransactionalEmailResponse
+	30,  // 107: sneakers.identity.v1.IdentityService.GetUserBySubject:output_type -> sneakers.identity.v1.GetUserBySubjectResponse
+	32,  // 108: sneakers.identity.v1.IdentityService.ResolveUserByEmail:output_type -> sneakers.identity.v1.ResolveUserByEmailResponse
+	34,  // 109: sneakers.identity.v1.IdentityService.GetSetupState:output_type -> sneakers.identity.v1.GetSetupStateResponse
+	36,  // 110: sneakers.identity.v1.IdentityService.BootstrapRoot:output_type -> sneakers.identity.v1.BootstrapRootResponse
+	38,  // 111: sneakers.identity.v1.IdentityService.AddGroupMember:output_type -> sneakers.identity.v1.AddGroupMemberResponse
+	40,  // 112: sneakers.identity.v1.IdentityService.RemoveGroupMember:output_type -> sneakers.identity.v1.RemoveGroupMemberResponse
+	42,  // 113: sneakers.identity.v1.IdentityService.ListGroupMembers:output_type -> sneakers.identity.v1.ListGroupMembersResponse
+	44,  // 114: sneakers.identity.v1.IdentityService.ListUserGroups:output_type -> sneakers.identity.v1.ListUserGroupsResponse
+	46,  // 115: sneakers.identity.v1.IdentityService.SetUserAdGroups:output_type -> sneakers.identity.v1.SetUserAdGroupsResponse
+	48,  // 116: sneakers.identity.v1.IdentityService.ListUsersByAdGroups:output_type -> sneakers.identity.v1.ListUsersByAdGroupsResponse
+	50,  // 117: sneakers.identity.v1.IdentityService.UserAdGroups:output_type -> sneakers.identity.v1.UserAdGroupsResponse
+	52,  // 118: sneakers.identity.v1.IdentityService.ResolveUserContext:output_type -> sneakers.identity.v1.ResolveUserContextResponse
+	54,  // 119: sneakers.identity.v1.IdentityService.EnrollTotp:output_type -> sneakers.identity.v1.EnrollTotpResponse
+	56,  // 120: sneakers.identity.v1.IdentityService.ConfirmTotp:output_type -> sneakers.identity.v1.ConfirmTotpResponse
+	58,  // 121: sneakers.identity.v1.IdentityService.VerifyTotp:output_type -> sneakers.identity.v1.VerifyTotpResponse
+	60,  // 122: sneakers.identity.v1.IdentityService.GetMfaStatus:output_type -> sneakers.identity.v1.GetMfaStatusResponse
+	62,  // 123: sneakers.identity.v1.IdentityService.DisableTotp:output_type -> sneakers.identity.v1.DisableTotpResponse
+	68,  // 124: sneakers.identity.v1.IdentityService.RequestPasswordReset:output_type -> sneakers.identity.v1.RequestPasswordResetResponse
+	70,  // 125: sneakers.identity.v1.IdentityService.ConfirmPasswordReset:output_type -> sneakers.identity.v1.ConfirmPasswordResetResponse
+	72,  // 126: sneakers.identity.v1.IdentityService.RequestEmailVerification:output_type -> sneakers.identity.v1.RequestEmailVerificationResponse
+	74,  // 127: sneakers.identity.v1.IdentityService.ConfirmEmailVerification:output_type -> sneakers.identity.v1.ConfirmEmailVerificationResponse
+	76,  // 128: sneakers.identity.v1.IdentityService.WebauthnRegisterBegin:output_type -> sneakers.identity.v1.WebauthnRegisterBeginResponse
+	78,  // 129: sneakers.identity.v1.IdentityService.WebauthnRegisterFinish:output_type -> sneakers.identity.v1.WebauthnRegisterFinishResponse
+	80,  // 130: sneakers.identity.v1.IdentityService.WebauthnAssertBegin:output_type -> sneakers.identity.v1.WebauthnAssertBeginResponse
+	82,  // 131: sneakers.identity.v1.IdentityService.WebauthnAssertFinish:output_type -> sneakers.identity.v1.WebauthnAssertFinishResponse
+	85,  // 132: sneakers.identity.v1.IdentityService.ListWebauthnCredentials:output_type -> sneakers.identity.v1.ListWebauthnCredentialsResponse
+	87,  // 133: sneakers.identity.v1.IdentityService.RemoveWebauthnCredential:output_type -> sneakers.identity.v1.RemoveWebauthnCredentialResponse
+	64,  // 134: sneakers.identity.v1.IdentityService.SendEmailOtp:output_type -> sneakers.identity.v1.SendEmailOtpResponse
+	66,  // 135: sneakers.identity.v1.IdentityService.VerifyEmailOtp:output_type -> sneakers.identity.v1.VerifyEmailOtpResponse
+	90,  // 136: sneakers.identity.v1.IdentityService.ListUserFactors:output_type -> sneakers.identity.v1.ListUserFactorsResponse
+	92,  // 137: sneakers.identity.v1.IdentityService.RemoveFactor:output_type -> sneakers.identity.v1.RemoveFactorResponse
+	96,  // 138: sneakers.identity.v1.IdentityService.CreateServiceAccount:output_type -> sneakers.identity.v1.CreateServiceAccountResponse
+	98,  // 139: sneakers.identity.v1.IdentityService.ListServiceAccounts:output_type -> sneakers.identity.v1.ListServiceAccountsResponse
+	100, // 140: sneakers.identity.v1.IdentityService.DisableServiceAccount:output_type -> sneakers.identity.v1.DisableServiceAccountResponse
+	102, // 141: sneakers.identity.v1.IdentityService.MintApiToken:output_type -> sneakers.identity.v1.MintApiTokenResponse
+	104, // 142: sneakers.identity.v1.IdentityService.ListApiTokens:output_type -> sneakers.identity.v1.ListApiTokensResponse
+	106, // 143: sneakers.identity.v1.IdentityService.RevokeApiToken:output_type -> sneakers.identity.v1.RevokeApiTokenResponse
+	121, // 144: sneakers.identity.v1.IdentityService.VerifyApiToken:output_type -> sneakers.identity.v1.VerifyApiTokenResponse
+	109, // 145: sneakers.identity.v1.IdentityService.MintUserToken:output_type -> sneakers.identity.v1.MintUserTokenResponse
+	111, // 146: sneakers.identity.v1.IdentityService.ListUserTokens:output_type -> sneakers.identity.v1.ListUserTokensResponse
+	113, // 147: sneakers.identity.v1.IdentityService.RevokeUserToken:output_type -> sneakers.identity.v1.RevokeUserTokenResponse
+	115, // 148: sneakers.identity.v1.IdentityService.VerifyUserToken:output_type -> sneakers.identity.v1.VerifyUserTokenResponse
+	117, // 149: sneakers.identity.v1.IdentityService.RevokeTokensByClientKind:output_type -> sneakers.identity.v1.RevokeTokensByClientKindResponse
+	119, // 150: sneakers.identity.v1.IdentityService.SetUserDisabled:output_type -> sneakers.identity.v1.SetUserDisabledResponse
+	123, // 151: sneakers.identity.v1.IdentityService.LinkOidcClient:output_type -> sneakers.identity.v1.LinkOidcClientResponse
+	125, // 152: sneakers.identity.v1.IdentityService.UnlinkOidcClient:output_type -> sneakers.identity.v1.UnlinkOidcClientResponse
+	127, // 153: sneakers.identity.v1.IdentityService.ResolveServiceAccountByOidc:output_type -> sneakers.identity.v1.ResolveServiceAccountByOidcResponse
+	94,  // [94:154] is the sub-list for method output_type
+	34,  // [34:94] is the sub-list for method input_type
 	34,  // [34:34] is the sub-list for extension type_name
 	34,  // [34:34] is the sub-list for extension extendee
 	0,   // [0:34] is the sub-list for field type_name
@@ -7273,7 +7577,7 @@ func file_sneakers_identity_v1_identity_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sneakers_identity_v1_identity_proto_rawDesc), len(file_sneakers_identity_v1_identity_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   126,
+			NumMessages:   128,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
