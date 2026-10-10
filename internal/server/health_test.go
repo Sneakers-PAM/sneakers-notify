@@ -49,6 +49,9 @@ func healthClient(t *testing.T, checker *health.Checker) healthpb.HealthClient {
 		t.Fatalf("dial: %v", err)
 	}
 	t.Cleanup(func() { _ = conn.Close() })
+	if checker != nil {
+		awaitFirstPass(t, checker)
+	}
 	return healthpb.NewHealthClient(conn)
 }
 
@@ -78,7 +81,7 @@ func TestHealth_ReadinessFollowsValkeyLivenessDoesNot(t *testing.T) {
 		t.Fatalf("readiness while healthy = %v", st)
 	}
 	down.Store(true)
-	time.Sleep(testTTL)
+	time.Sleep(2 * testTTL)
 	st, md := check(t, c, "")
 	if st != healthpb.HealthCheckResponse_NOT_SERVING {
 		t.Fatalf("readiness while valkey is down = %v, want NOT_SERVING", st)
@@ -116,7 +119,7 @@ func TestHealth_ReadinessFollowsValkeyLivenessDoesNot(t *testing.T) {
 	}
 
 	down.Store(false)
-	time.Sleep(testTTL)
+	time.Sleep(2 * testTTL)
 	if st, _ := check(t, c, ""); st != healthpb.HealthCheckResponse_SERVING {
 		t.Fatalf("readiness after recovery = %v, want SERVING", st)
 	}
@@ -137,8 +140,8 @@ func TestHealth_IdentityDownIsDegradedAndStillServing(t *testing.T) {
 }
 
 func TestHealth_ReadinessWaitsForTheWorkloadKeySet(t *testing.T) {
-	v := fakeReadinessVerifier{err: workloadauth.ErrUnavailable}
-	checker := newTestChecker(t, WorkloadIdentity(&v))
+	v := &fakeReadinessVerifier{err: workloadauth.ErrUnavailable}
+	checker := newTestChecker(t, WorkloadIdentity(v))
 	c := healthClient(t, checker)
 
 	st, md := check(t, c, "")
@@ -150,8 +153,8 @@ func TestHealth_ReadinessWaitsForTheWorkloadKeySet(t *testing.T) {
 		t.Fatalf("health body = %v", raw)
 	}
 
-	v.err = nil
-	time.Sleep(testTTL)
+	v.set(nil)
+	time.Sleep(2 * testTTL)
 	st, md = check(t, c, "")
 	if st != healthpb.HealthCheckResponse_SERVING {
 		t.Fatalf("readiness once the key set loads = %v, want SERVING", st)

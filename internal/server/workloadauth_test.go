@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	log "github.com/Bugs5382/go-log"
@@ -54,12 +55,18 @@ func TestWorkloadAuthEnabled(t *testing.T) {
 
 // fakeReadinessVerifier is a fake behind the ReadinessVerifier interface, not
 // a mock of go-workload-identity's own Verifier.
-type fakeReadinessVerifier struct{ err error }
+// Its answer can change while the background refresh reads it.
+type fakeReadinessVerifier struct {
+	mu  sync.Mutex
+	err error
+}
 
-func (f fakeReadinessVerifier) Ready() error { return f.err }
+func (f *fakeReadinessVerifier) set(err error) { f.mu.Lock(); f.err = err; f.mu.Unlock() }
+
+func (f *fakeReadinessVerifier) Ready() error { f.mu.Lock(); defer f.mu.Unlock(); return f.err }
 
 func TestWorkloadIdentity_NotReadyUntilKeySetLoads(t *testing.T) {
-	dep := WorkloadIdentity(fakeReadinessVerifier{err: workloadauth.ErrUnavailable})
+	dep := WorkloadIdentity(&fakeReadinessVerifier{err: workloadauth.ErrUnavailable})
 	if dep.Name != "workload-identity" || !dep.Required {
 		t.Fatalf("dep = %+v, want a required dependency named workload-identity", dep)
 	}
@@ -69,7 +76,7 @@ func TestWorkloadIdentity_NotReadyUntilKeySetLoads(t *testing.T) {
 }
 
 func TestWorkloadIdentity_ReadyOnceKeySetLoads(t *testing.T) {
-	dep := WorkloadIdentity(fakeReadinessVerifier{})
+	dep := WorkloadIdentity(&fakeReadinessVerifier{})
 	if err := dep.Check(context.Background()); err != nil {
 		t.Fatalf("check = %v, want nil", err)
 	}

@@ -74,8 +74,18 @@ func main() {
 	if opt.Password != "" {
 		ropts = append(ropts, bredis.WithPassword(opt.Password))
 	}
-	rc, err := bredis.Connect(ctx, ropts...)
+	svcLog := log.NewLogger(serviceName)
+	// The port answers health from here on, while the boot waits for Valkey:
+	// liveness SERVING, so the startup probe passes, and readiness
+	// NOT_SERVING with valkey listed down until it is reached.
+	boot := mustBootHealth(logger, grpcPort, svcLog)
+	rc, err := connectValkey(ctx, boot, ropts)
 	if err != nil {
+		if ctx.Err() != nil {
+			boot.Stop()
+			logger.Info().Msg("stopped while waiting for valkey")
+			return
+		}
 		logger.Fatal().Err(err).Msg("redis connect")
 	}
 
@@ -102,7 +112,6 @@ func main() {
 	fo := fanout.Resolver{Identity: identityv1.NewIdentityServiceClient(idConn)}
 	svc := grpcsvc.New(st, fo)
 
-	svcLog := log.NewLogger(serviceName)
 	// Every caller is authenticated by its workload identity and checked
 	// against grpcsvc.CallerPolicy: the vault sends events, the gateway reads
 	// inboxes.
@@ -125,6 +134,7 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("health checker")
 	}
+	boot.Stop()
 	if err := server.RunWithHealth(ctx, grpcPort, svcLog, checker, func(gs *grpc.Server) {
 		grpcsvc.RegisterServer(gs, svc)
 	}, authOpts...); err != nil {
