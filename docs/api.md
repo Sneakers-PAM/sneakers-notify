@@ -16,8 +16,10 @@ gateway's diagnostics read them.
 The health check has two services:
 
 - `""` (the default) is readiness. It answers `NOT_SERVING` while Valkey, a required
-  dependency, doesn't answer a `PING`, and `SERVING` again once it does. Each ping has a 1-second
-  timeout and its result answers for 5 seconds, so frequent probes don't load Valkey. Its answer
+  dependency, doesn't answer a `PING`, and `SERVING` again once it does. The pings run in the
+  background every 5 seconds, each with a 1-second timeout, and a check only reads their last
+  result, so a probe never waits on Valkey and frequent probes don't load it. Right after the
+  start, before the first pass, each dependency is `down` with the class `pending`. Its answer
   carries `sneakers-health`, a compact JSON report:
 
   ```json
@@ -29,6 +31,10 @@ The health check has two services:
   itself: `timeout`, `refused`, `unavailable`, `unauthenticated` or `error` (or go-buildinfo's
   `connection-refused`, `dns`, `network`, `canceled` or `panic`).
 - `liveness` answers `SERVING` whenever the process does and never touches a dependency.
+
+The health check answers from the start of the boot: while notify is still reaching Valkey,
+`liveness` answers `SERVING` and readiness `NOT_SERVING`, with `valkey` reported `down` in
+`sneakers-health`. The full server takes the port over once Valkey answers.
 
 Any other service name is `NOT_FOUND`. `Watch` streams the serving status of either service as it
 changes.

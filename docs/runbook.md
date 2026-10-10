@@ -40,6 +40,12 @@ it answering again. Liveness only shows that the process answers, so a Valkey ou
 out of its Service without restarting it. The kubelet's liveness probe has to ask for the
 `liveness` service to get that; the probes are set in sneakers-release's chart.
 
+At startup notify waits for Valkey rather than exiting: while it (or its DNS name) isn't
+reachable, the connection is retried with backoff (500 ms doubling to 15 s, with jitter), one
+`dependency not reachable yet; retrying` warning per attempt, and the health check already
+answers (liveness `SERVING`, readiness `NOT_SERVING`). Only an error that retrying can't fix, such
+as a wrong password, stops the boot.
+
 | Dependency | Required | Why |
 |---|---|---|
 | Valkey | yes | The inbox lives there: every RPC (`NotifyEvent`, `ListNotifications`, `UnreadCount`, `MarkRead`, `MarkAllRead`) reads or writes it. |
