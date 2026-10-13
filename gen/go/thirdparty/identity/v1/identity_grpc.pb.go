@@ -27,6 +27,8 @@ const (
 	IdentityService_ListGroups_FullMethodName                    = "/sneakers.identity.v1.IdentityService/ListGroups"
 	IdentityService_GetGroup_FullMethodName                      = "/sneakers.identity.v1.IdentityService/GetGroup"
 	IdentityService_CreateGroup_FullMethodName                   = "/sneakers.identity.v1.IdentityService/CreateGroup"
+	IdentityService_ListOrphanGroups_FullMethodName              = "/sneakers.identity.v1.IdentityService/ListOrphanGroups"
+	IdentityService_PruneOrphanGroups_FullMethodName             = "/sneakers.identity.v1.IdentityService/PruneOrphanGroups"
 	IdentityService_SearchUsers_FullMethodName                   = "/sneakers.identity.v1.IdentityService/SearchUsers"
 	IdentityService_ResolveUserLabels_FullMethodName             = "/sneakers.identity.v1.IdentityService/ResolveUserLabels"
 	IdentityService_PreCreateLocalUser_FullMethodName            = "/sneakers.identity.v1.IdentityService/PreCreateLocalUser"
@@ -77,6 +79,7 @@ const (
 	IdentityService_ListUserTokens_FullMethodName                = "/sneakers.identity.v1.IdentityService/ListUserTokens"
 	IdentityService_RevokeUserToken_FullMethodName               = "/sneakers.identity.v1.IdentityService/RevokeUserToken"
 	IdentityService_VerifyUserToken_FullMethodName               = "/sneakers.identity.v1.IdentityService/VerifyUserToken"
+	IdentityService_RevokeTokensByClientKind_FullMethodName      = "/sneakers.identity.v1.IdentityService/RevokeTokensByClientKind"
 	IdentityService_SetUserDisabled_FullMethodName               = "/sneakers.identity.v1.IdentityService/SetUserDisabled"
 	IdentityService_LinkOidcClient_FullMethodName                = "/sneakers.identity.v1.IdentityService/LinkOidcClient"
 	IdentityService_UnlinkOidcClient_FullMethodName              = "/sneakers.identity.v1.IdentityService/UnlinkOidcClient"
@@ -93,6 +96,9 @@ type IdentityServiceClient interface {
 	GetGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*GetGroupResponse, error)
 	// Admin-gated: create a new directory group.
 	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
+	// Site admin: list groups with no members, and prune them.
+	ListOrphanGroups(ctx context.Context, in *ListOrphanGroupsRequest, opts ...grpc.CallOption) (*ListOrphanGroupsResponse, error)
+	PruneOrphanGroups(ctx context.Context, in *PruneOrphanGroupsRequest, opts ...grpc.CallOption) (*PruneOrphanGroupsResponse, error)
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 	ResolveUserLabels(ctx context.Context, in *ResolveUserLabelsRequest, opts ...grpc.CallOption) (*ResolveUserLabelsResponse, error)
 	// Provisioning for real logins.
@@ -177,6 +183,10 @@ type IdentityServiceClient interface {
 	ListUserTokens(ctx context.Context, in *ListUserTokensRequest, opts ...grpc.CallOption) (*ListUserTokensResponse, error)
 	RevokeUserToken(ctx context.Context, in *RevokeUserTokenRequest, opts ...grpc.CallOption) (*RevokeUserTokenResponse, error)
 	VerifyUserToken(ctx context.Context, in *VerifyUserTokenRequest, opts ...grpc.CallOption) (*VerifyUserTokenResponse, error)
+	// Revokes every live personal token of one client kind. Only the
+	// appliance may call it, as itself: turning the MCP off revokes every
+	// agent token ("mcp").
+	RevokeTokensByClientKind(ctx context.Context, in *RevokeTokensByClientKindRequest, opts ...grpc.CallOption) (*RevokeTokensByClientKindResponse, error)
 	SetUserDisabled(ctx context.Context, in *SetUserDisabledRequest, opts ...grpc.CallOption) (*SetUserDisabledResponse, error)
 	// OIDC client linkage: admin-gated bind/unbind of an Ory Hydra
 	// OAuth2 client to a service account, and the gateway's OIDC machine-auth
@@ -238,6 +248,26 @@ func (c *identityServiceClient) CreateGroup(ctx context.Context, in *CreateGroup
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateGroupResponse)
 	err := c.cc.Invoke(ctx, IdentityService_CreateGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) ListOrphanGroups(ctx context.Context, in *ListOrphanGroupsRequest, opts ...grpc.CallOption) (*ListOrphanGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListOrphanGroupsResponse)
+	err := c.cc.Invoke(ctx, IdentityService_ListOrphanGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) PruneOrphanGroups(ctx context.Context, in *PruneOrphanGroupsRequest, opts ...grpc.CallOption) (*PruneOrphanGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PruneOrphanGroupsResponse)
+	err := c.cc.Invoke(ctx, IdentityService_PruneOrphanGroups_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -747,6 +777,16 @@ func (c *identityServiceClient) VerifyUserToken(ctx context.Context, in *VerifyU
 	return out, nil
 }
 
+func (c *identityServiceClient) RevokeTokensByClientKind(ctx context.Context, in *RevokeTokensByClientKindRequest, opts ...grpc.CallOption) (*RevokeTokensByClientKindResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokeTokensByClientKindResponse)
+	err := c.cc.Invoke(ctx, IdentityService_RevokeTokensByClientKind_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *identityServiceClient) SetUserDisabled(ctx context.Context, in *SetUserDisabledRequest, opts ...grpc.CallOption) (*SetUserDisabledResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetUserDisabledResponse)
@@ -797,6 +837,9 @@ type IdentityServiceServer interface {
 	GetGroup(context.Context, *GetGroupRequest) (*GetGroupResponse, error)
 	// Admin-gated: create a new directory group.
 	CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
+	// Site admin: list groups with no members, and prune them.
+	ListOrphanGroups(context.Context, *ListOrphanGroupsRequest) (*ListOrphanGroupsResponse, error)
+	PruneOrphanGroups(context.Context, *PruneOrphanGroupsRequest) (*PruneOrphanGroupsResponse, error)
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	ResolveUserLabels(context.Context, *ResolveUserLabelsRequest) (*ResolveUserLabelsResponse, error)
 	// Provisioning for real logins.
@@ -881,6 +924,10 @@ type IdentityServiceServer interface {
 	ListUserTokens(context.Context, *ListUserTokensRequest) (*ListUserTokensResponse, error)
 	RevokeUserToken(context.Context, *RevokeUserTokenRequest) (*RevokeUserTokenResponse, error)
 	VerifyUserToken(context.Context, *VerifyUserTokenRequest) (*VerifyUserTokenResponse, error)
+	// Revokes every live personal token of one client kind. Only the
+	// appliance may call it, as itself: turning the MCP off revokes every
+	// agent token ("mcp").
+	RevokeTokensByClientKind(context.Context, *RevokeTokensByClientKindRequest) (*RevokeTokensByClientKindResponse, error)
 	SetUserDisabled(context.Context, *SetUserDisabledRequest) (*SetUserDisabledResponse, error)
 	// OIDC client linkage: admin-gated bind/unbind of an Ory Hydra
 	// OAuth2 client to a service account, and the gateway's OIDC machine-auth
@@ -912,6 +959,12 @@ func (UnimplementedIdentityServiceServer) GetGroup(context.Context, *GetGroupReq
 }
 func (UnimplementedIdentityServiceServer) CreateGroup(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateGroup not implemented")
+}
+func (UnimplementedIdentityServiceServer) ListOrphanGroups(context.Context, *ListOrphanGroupsRequest) (*ListOrphanGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOrphanGroups not implemented")
+}
+func (UnimplementedIdentityServiceServer) PruneOrphanGroups(context.Context, *PruneOrphanGroupsRequest) (*PruneOrphanGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PruneOrphanGroups not implemented")
 }
 func (UnimplementedIdentityServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchUsers not implemented")
@@ -1063,6 +1116,9 @@ func (UnimplementedIdentityServiceServer) RevokeUserToken(context.Context, *Revo
 func (UnimplementedIdentityServiceServer) VerifyUserToken(context.Context, *VerifyUserTokenRequest) (*VerifyUserTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method VerifyUserToken not implemented")
 }
+func (UnimplementedIdentityServiceServer) RevokeTokensByClientKind(context.Context, *RevokeTokensByClientKindRequest) (*RevokeTokensByClientKindResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeTokensByClientKind not implemented")
+}
 func (UnimplementedIdentityServiceServer) SetUserDisabled(context.Context, *SetUserDisabledRequest) (*SetUserDisabledResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetUserDisabled not implemented")
 }
@@ -1182,6 +1238,42 @@ func _IdentityService_CreateGroup_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IdentityServiceServer).CreateGroup(ctx, req.(*CreateGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_ListOrphanGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOrphanGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).ListOrphanGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_ListOrphanGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).ListOrphanGroups(ctx, req.(*ListOrphanGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_PruneOrphanGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PruneOrphanGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).PruneOrphanGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_PruneOrphanGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).PruneOrphanGroups(ctx, req.(*PruneOrphanGroupsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2086,6 +2178,24 @@ func _IdentityService_VerifyUserToken_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IdentityService_RevokeTokensByClientKind_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeTokensByClientKindRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).RevokeTokensByClientKind(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_RevokeTokensByClientKind_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).RevokeTokensByClientKind(ctx, req.(*RevokeTokensByClientKindRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _IdentityService_SetUserDisabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetUserDisabledRequest)
 	if err := dec(in); err != nil {
@@ -2184,6 +2294,14 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateGroup",
 			Handler:    _IdentityService_CreateGroup_Handler,
+		},
+		{
+			MethodName: "ListOrphanGroups",
+			Handler:    _IdentityService_ListOrphanGroups_Handler,
+		},
+		{
+			MethodName: "PruneOrphanGroups",
+			Handler:    _IdentityService_PruneOrphanGroups_Handler,
 		},
 		{
 			MethodName: "SearchUsers",
@@ -2384,6 +2502,10 @@ var IdentityService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyUserToken",
 			Handler:    _IdentityService_VerifyUserToken_Handler,
+		},
+		{
+			MethodName: "RevokeTokensByClientKind",
+			Handler:    _IdentityService_RevokeTokensByClientKind_Handler,
 		},
 		{
 			MethodName: "SetUserDisabled",
