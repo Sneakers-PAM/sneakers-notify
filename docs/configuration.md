@@ -6,7 +6,7 @@ service-to-service authentication (below), which must be configured or explicitl
 | Variable | Default | Purpose |
 |---|---|---|
 | `GRPC_PORT` | `9090` | TCP port the gRPC server listens on (all interfaces). |
-| `REDIS_URL` | `redis://localhost:26379/0` | Redis holding the inboxes, as a `redis://[:password@]host:port/db` URL. Only the address, database number and password are used: TLS and other URL options are not applied. Keep the password in your secret store and inject the URL at run time. |
+| `REDIS_URL` | `redis://localhost:26379/0` | Redis holding the inboxes, as a `redis://[:password@]host:port/db` or `rediss://[:password@]host:port/db` URL. The address, database number, password and `rediss://` TLS are applied, and the certificate is checked against the system roots. A username or a query option (such as `?pool_size=5`) stops the start rather than being ignored. Keep the password in your secret store and inject the URL at run time. |
 | `IDENTITY_ADDR` | `localhost:9192` | `host:port` of the identity service's gRPC API, used to expand groups and label actors. The connection is plaintext. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | (none) | OTLP gRPC endpoint for traces and metrics (plaintext). Unset or empty runs without a collector: no export, no error log. |
 | `LOG_LEVEL` | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` or `disabled`. |

@@ -13,14 +13,12 @@ import (
 	"github.com/Bugs5382/go-buildinfo/health"
 	log "github.com/Bugs5382/go-log"
 	otel "github.com/Bugs5382/go-otel"
-	bredis "github.com/Bugs5382/go-redis"
 	workloadauth "github.com/Bugs5382/go-workload-identity"
 	identityv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/thirdparty/identity/v1"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/fanout"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/grpcsvc"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/store"
-	goredis "github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -65,14 +63,9 @@ func main() {
 
 	// Redis (ephemeral inbox). REDIS_URL matches the gateway's default so
 	// both services share one Redis in dev.
-	redisURL := env("REDIS_URL", "redis://localhost:26379/0")
-	opt, err := goredis.ParseURL(redisURL)
+	ropts, err := redisOptions(env("REDIS_URL", "redis://localhost:26379/0"))
 	if err != nil {
 		logger.Fatal().Err(err).Msg("redis url")
-	}
-	ropts := []bredis.Option{bredis.WithAddr(opt.Addr), bredis.WithDB(opt.DB)}
-	if opt.Password != "" {
-		ropts = append(ropts, bredis.WithPassword(opt.Password))
 	}
 	svcLog := log.NewLogger(serviceName)
 	// The port answers health from here on, while the boot waits for Valkey:
