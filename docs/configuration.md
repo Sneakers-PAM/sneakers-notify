@@ -8,7 +8,7 @@ service-to-service authentication (below), which must be configured or explicitl
 | `GRPC_PORT` | `9090` | TCP port the gRPC server listens on (all interfaces). |
 | `REDIS_URL` | `redis://localhost:26379/0` | Redis holding the inboxes, as a `redis://[:password@]host:port/db` or `rediss://[:password@]host:port/db` URL. The address, database number, password and `rediss://` TLS are applied, and the certificate is checked against the system roots. A username or a query option (such as `?pool_size=5`) stops the start rather than being ignored. Keep the password in your secret store and inject the URL at run time. |
 | `IDENTITY_ADDR` | `localhost:9192` | `host:port` of the identity service's gRPC API, used to expand groups and label actors. The connection is plaintext. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | (none) | OTLP gRPC endpoint for traces and metrics (plaintext). Unset or empty runs without a collector: no export, no error log. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | (none) | OTLP gRPC collector for traces and metrics, as a URL: `http://collector:4317` for plaintext, `https://collector:4317` for TLS. A bare `host:port` still connects as plaintext, but the OpenTelemetry SDK, which reads this variable too, logs `parse url` errors at start. Any other scheme stops the service at start. Unset or empty runs without a collector: no export, no error log. |
 | `LOG_LEVEL` | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` or `disabled`. |
 | `LOG_FORMAT` | `json` | `json`, `console` (or `pretty`), or `both` (JSON on stdout, console on stderr). |
 
