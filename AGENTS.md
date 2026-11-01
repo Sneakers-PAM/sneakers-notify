@@ -19,9 +19,9 @@ notify, is the record of every event. Keep it that way.
 - `internal/fanout/` - turns Informed subjects into recipient ids and labels the actor, over the
   identity API.
 - `internal/store/` - the Redis inbox (one capped, expiring list per user) and its tests.
-- `internal/telemetry/` - the export switches, the allow-list of exported log fields, the export
-  error handler and the optional `otlp` health dependency. A new log field exports nothing until it
-  is added there.
+- `internal/telemetry/` - the export switches, the allow-lists for exported log fields, spans,
+  metrics and attributes, and the optional `otlp` health dependency. A new log field exports nothing
+  until it is added there.
 - `internal/safeconv/` - the bounds-checked int to int32 conversion.
 - `internal/server/` - the gRPC server bootstrap, with the health service and readiness checks
   from `github.com/Bugs5382/go-buildinfo`.

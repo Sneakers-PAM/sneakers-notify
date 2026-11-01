@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package telemetry holds what notify adds to go-otel: the two export
-// switches, the filters on exported logs, the export error handler and the
-// optional otlp health dependency.
+// switches, the allow-lists for what may be exported and the optional otlp
+// health dependency.
 package telemetry
 
 import (
@@ -12,13 +12,9 @@ import (
 	"io"
 	"os"
 	"regexp"
-	"strings"
 
 	"github.com/Bugs5382/go-buildinfo/health"
-	log "github.com/Bugs5382/go-log"
 	otel "github.com/Bugs5382/go-otel"
-	otelapi "go.opentelemetry.io/otel"
-	"google.golang.org/grpc/status"
 )
 
 // The switches take the exact value "true"; anything else leaves them off.
@@ -58,6 +54,14 @@ var allowedLogFields = []string{
 	"retry_in_ms",
 	"to",
 }
+
+// rpcMethod is the shape of a real notify or identity method. otelgrpc copies
+// whatever method a client sent into span names and rpc.method.
+var rpcMethod = regexp.MustCompile(`^sneakers\.[a-z]+\.v1\.[A-Za-z]+/[A-Za-z]+$`)
+
+// exportedAttributes is every span and metric attribute notify sends. No
+// resource attribute is named, so only service.name leaves.
+var exportedAttributes = []string{"rpc.method", "rpc.response.status_code"}
 
 var apiKeyPattern = regexp.MustCompile(`\bsnk_[A-Za-z0-9_\-]+`)
 
@@ -103,6 +107,13 @@ func (s Settings) Options() []otel.Option {
 		otel.WithLogs(s.Logs),
 		otel.WithLogAllowFields(allowedLogFields...),
 		otel.WithLogRedactPatterns(apiKeyPattern),
+		otel.WithTelemetryFilter(true),
+		otel.WithTraceAllowSpanNames(rpcMethod),
+		otel.WithTraceAllowAttributes(exportedAttributes...),
+		otel.WithMetricAllowAttributes(exportedAttributes...),
+		otel.WithAttributeValuePattern("rpc.method", rpcMethod),
+		otel.WithBaggage(false),
+		otel.WithRedactedErrors(true),
 	}
 }
 
@@ -131,20 +142,4 @@ func ExportDown(st otel.ExportStatus, logs bool) bool {
 
 func failing(s otel.SignalStatus) bool {
 	return s.LastErrorAt.After(s.LastSuccess)
-}
-
-// SetErrorHandler sends OpenTelemetry's errors to lg in place of the default
-// raw stderr print. Only the class is logged: the text can name the endpoint
-// or echo headers.
-func SetErrorHandler(lg log.Logger) {
-	otelapi.SetErrorHandler(otelapi.ErrorHandlerFunc(func(err error) {
-		lg.Warn("otlp export error", log.F("error_class", errorClass(err)))
-	}))
-}
-
-func errorClass(err error) string {
-	if s, ok := status.FromError(err); ok {
-		return strings.ToLower(s.Code().String())
-	}
-	return health.ClassError
 }

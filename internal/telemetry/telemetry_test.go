@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	stdlog "log"
 	"net"
 	"os"
 	"slices"
@@ -18,12 +19,21 @@ import (
 	"github.com/Bugs5382/go-buildinfo/health"
 	log "github.com/Bugs5382/go-log"
 	otel "github.com/Bugs5382/go-otel"
+	notifyv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/sneakers/notify/v1"
+	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/telemetry"
 	otelapi "go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	collogs "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	colmetrics "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	coltrace "go.opentelemetry.io/proto/otlp/collector/trace/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -36,6 +46,8 @@ type collector struct {
 	collogs.UnimplementedLogsServiceServer
 	mu     sync.Mutex
 	logs   strings.Builder
+	spans  strings.Builder
+	points strings.Builder
 	refuse error
 }
 
@@ -61,11 +73,34 @@ type traceReceiver struct {
 	c *collector
 }
 
-func (t traceReceiver) Export(context.Context, *coltrace.ExportTraceServiceRequest) (*coltrace.ExportTraceServiceResponse, error) {
+func (t traceReceiver) Export(_ context.Context, r *coltrace.ExportTraceServiceRequest) (*coltrace.ExportTraceServiceResponse, error) {
 	if t.c.refuse != nil {
 		return nil, t.c.refuse
 	}
+	t.c.mu.Lock()
+	defer t.c.mu.Unlock()
+	b, err := protojson.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+	t.c.spans.Write(b)
 	return &coltrace.ExportTraceServiceResponse{}, nil
+}
+
+type metricReceiver struct {
+	colmetrics.UnimplementedMetricsServiceServer
+	c *collector
+}
+
+func (m metricReceiver) Export(_ context.Context, r *colmetrics.ExportMetricsServiceRequest) (*colmetrics.ExportMetricsServiceResponse, error) {
+	m.c.mu.Lock()
+	defer m.c.mu.Unlock()
+	b, err := protojson.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+	m.c.points.Write(b)
+	return &colmetrics.ExportMetricsServiceResponse{}, nil
 }
 
 func startCollector(t *testing.T, c *collector) string {
@@ -77,6 +112,7 @@ func startCollector(t *testing.T, c *collector) string {
 	s := grpc.NewServer()
 	collogs.RegisterLogsServiceServer(s, c)
 	coltrace.RegisterTraceServiceServer(s, traceReceiver{c: c})
+	colmetrics.RegisterMetricsServiceServer(s, metricReceiver{c: c})
 	go func() { _ = s.Serve(lis) }()
 	t.Cleanup(s.Stop)
 	return "http://" + lis.Addr().String()
@@ -223,19 +259,143 @@ func TestAllowListLeavesOutFreeText(t *testing.T) {
 	}
 }
 
-func TestErrorHandler_LeavesTheEndpointOut(t *testing.T) {
-	var buf strings.Builder
-	lg := log.NewLoggerWithOptions("notify-test", log.WithOutput(&buf))
-	telemetry.SetErrorHandler(lg)
-	otelapi.Handle(errors.New("export to https://collector.example.org:4317 failed"))
-	otelapi.Handle(status.Error(codes.Unauthenticated, "authorization=abc"))
-	out := buf.String()
-	for _, leak := range []string{"collector.example.org", "authorization"} {
-		if strings.Contains(out, leak) {
-			t.Fatalf("%q leaked: %s", leak, out)
+// leakyNotify puts the canary everywhere a handler can. Baggage it receives is
+// copied onto a span attribute, so a value that got in shows up at the collector.
+type leakyNotify struct {
+	notifyv1.UnimplementedNotifyServiceServer
+	counter metric.Int64Counter
+}
+
+func (l leakyNotify) UnreadCount(ctx context.Context, _ *notifyv1.UnreadCountRequest) (*notifyv1.UnreadCountResponse, error) {
+	_, named := otelapi.Tracer("notify-test").Start(ctx, "lookup "+canary)
+	named.End()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("leak", canary), attribute.String("baggage.seen", baggage.FromContext(ctx).String()))
+	span.RecordError(errors.New(canary))
+	l.counter.Add(ctx, 1, metric.WithAttributes(attribute.String("leak", canary), attribute.String("rpc.method", canary)))
+	return nil, status.Error(codes.Internal, canary)
+}
+
+func (leakyNotify) MarkAllRead(context.Context, *notifyv1.MarkAllReadRequest) (*notifyv1.MarkAllReadResponse, error) {
+	panic(canary)
+}
+
+// A canary on every export path, on real requests through the service's own
+// gRPC server: span status, exception, span name, span and metric attributes,
+// resource, baggage, tracestate, peer metadata, a made-up method and a panic.
+func TestCanaryOnEveryPathNeverReachesTheCollector(t *testing.T) {
+	t.Setenv("OTEL_RESOURCE_ATTRIBUTES", "leak="+canary)
+	c := &collector{}
+	s := telemetry.Settings{Endpoint: startCollector(t, c), Logs: true}
+	lg := log.NewLoggerWithOptions("notify-test", log.WithOutput(s.Output()))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	shutdown, err := otel.InitWithOptions(ctx, "notify-test", s.Endpoint, s.Options()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter, err := otelapi.Meter("notify-test").Int64Counter("canary_counter")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, port, err := net.SplitHostPort(lis.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := lis.Addr().String()
+	if err := lis.Close(); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- server.RunWithLogger(ctx, port, lg, func(gs *grpc.Server) {
+			notifyv1.RegisterNotifyServiceServer(gs, leakyNotify{counter: counter})
+		})
+	}()
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUserAgent(canary), grpc.WithAuthority(canary))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	rctx := metadata.AppendToOutgoingContext(ctx,
+		"baggage", "leak="+canary,
+		"traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+		"tracestate", "leak="+canary)
+	client := notifyv1.NewNotifyServiceClient(conn)
+	waitUntil(t, func() bool {
+		_, err := client.UnreadCount(rctx, &notifyv1.UnreadCountRequest{})
+		return status.Code(err) == codes.Internal
+	})
+	if _, err := client.MarkAllRead(rctx, &notifyv1.MarkAllReadRequest{}); status.Code(err) != codes.Internal {
+		t.Fatalf("panic path: got %v", err)
+	}
+	if err := conn.Invoke(rctx, "/sneakers.notify.v1.NotifyService/"+canary, &notifyv1.UnreadCountRequest{}, &notifyv1.UnreadCountResponse{}); status.Code(err) != codes.Unimplemented {
+		t.Fatalf("made-up method: got %v", err)
+	}
+
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if err := shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	spans, points, logs := c.spans.String(), c.points.String(), c.logs.String()
+	for name, got := range map[string]string{"spans": spans, "metrics": points, "logs": logs} {
+		if strings.Contains(got, canary) {
+			t.Errorf("canary reached the collector in %s: %s", name, got)
+		}
+		if name != "logs" && strings.Contains(got, "url.") {
+			t.Errorf("a url attribute reached the collector in %s: %s", name, got)
 		}
 	}
-	if !strings.Contains(out, `"error_class":"unauthenticated"`) {
-		t.Fatalf("want the class logged: %s", out)
+	const method = "sneakers.notify.v1.NotifyService/UnreadCount"
+	if !strings.Contains(spans, `"name":"`+method+`"`) {
+		t.Errorf("the service's span name did not arrive: %s", spans)
+	}
+	if !strings.Contains(spans, `"rpc.method"`) || !strings.Contains(points, method) {
+		t.Errorf("rpc.method did not arrive:\nspans %s\nmetrics %s", spans, points)
+	}
+	if !strings.Contains(logs, "recovered from panic") {
+		t.Errorf("the panic line did not arrive: %s", logs)
+	}
+}
+
+func waitUntil(t *testing.T, ok func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !ok() {
+		if time.Now().After(deadline) {
+			t.Fatal("timed out")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// go-otel takes over the SDK's error handler: nothing of the error's text gets out.
+func TestSDKErrorsPrintNoText(t *testing.T) {
+	var buf strings.Builder
+	stdlog.SetOutput(&buf)
+	defer stdlog.SetOutput(os.Stderr)
+	s := telemetry.Settings{}
+	ctx := context.Background()
+	shutdown, err := otel.InitWithOptions(ctx, "notify-test", s.Endpoint, s.Options()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = shutdown(ctx) }()
+	otelapi.Handle(errors.New("export to https://collector.example.org:4317 failed " + canary))
+	if strings.Contains(buf.String(), canary) || strings.Contains(buf.String(), "collector.example.org") {
+		t.Fatalf("error text printed: %s", buf.String())
 	}
 }

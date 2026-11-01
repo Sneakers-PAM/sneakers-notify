@@ -58,7 +58,6 @@ func main() {
 
 	tel := telemetry.FromEnv(os.Getenv)
 	logger := log.NewLoggerWithOptions(serviceName, log.WithOutput(tel.Output()))
-	telemetry.SetErrorHandler(logger)
 
 	// notify has no database, so it reads its few settings straight from the
 	// environment rather than through a config loader that requires one.

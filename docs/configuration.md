@@ -21,9 +21,13 @@ log JSON, at `debug` in a dev cluster, `info` in QA or staging and `error` in pr
 
 Exported logs are default-deny, and the filters apply to the export only. A record carries its time, level, `service`, message and trace ids, plus the fields named in `internal/telemetry`. Every other field, `error` included, is dropped: a new log field exports nothing until it is added to that list. Only ids, counts, durations, classes, states and short enums belong on it. Levels below `info` are never exported, and strings go through go-otel's redactor plus a rule for `snk_` API keys. `LOG_FORMAT=console` exports nothing, because only JSON lines are read.
 
+## Trace and metric export
+
+Traces, metrics and the resource are default-deny too, through go-otel's telemetry filter. Span names leave only when they match `^sneakers\.[a-z]+\.v1\.[A-Za-z]+/[A-Za-z]+$`; any other span stays in the trace as `[span]`. The only attributes on spans and metrics are `rpc.method`, held to the same pattern, and `rpc.response.status_code`. The resource carries `service.name` alone. Status text, exception events, `tracestate` and baggage never leave, and baggage is not carried on calls.
+
 ## Export health
 
-When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, the readiness report lists an optional `otlp` dependency. It reports degraded, with the class `unavailable`, when the last export of traces or metrics failed, or of logs when they are on. This marks the service degraded and never fails readiness, and it is left out when no endpoint is set. Export errors are logged at `warn` as a class only, without the endpoint or headers.
+When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, the readiness report lists an optional `otlp` dependency. It reports degraded, with the class `unavailable`, when the last export of traces or metrics failed, or of logs when they are on. This marks the service degraded and never fails readiness, and it is left out when no endpoint is set. OpenTelemetry's own errors print as a gRPC code only, through go-otel's redacted handler, with no error text.
 
 ## Service-to-service authentication
 
