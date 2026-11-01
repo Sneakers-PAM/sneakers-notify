@@ -9,15 +9,14 @@ import (
 	log "github.com/Bugs5382/go-log"
 	bredis "github.com/Bugs5382/go-redis"
 	"github.com/Sneakers-PAM/sneakers-notify/internal/server"
-	"github.com/rs/zerolog"
 )
 
 // mustBootHealth starts the boot health service on port; failing to listen
 // is fatal.
-func mustBootHealth(logger zerolog.Logger, port string, lg log.Logger) *server.BootHealth {
+func mustBootHealth(lg log.Logger, port string) *server.BootHealth {
 	boot, err := server.StartBootHealth(port, lg, "valkey")
 	if err != nil {
-		logger.Fatal().Err(err).Msg("boot health")
+		lg.Fatal(err, "boot health")
 	}
 	return boot
 }

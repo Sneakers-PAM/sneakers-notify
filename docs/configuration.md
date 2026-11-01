@@ -8,12 +8,26 @@ service-to-service authentication (below), which must be configured or explicitl
 | `GRPC_PORT` | `9090` | TCP port the gRPC server listens on (all interfaces). |
 | `REDIS_URL` | `redis://localhost:26379/0` | Redis holding the inboxes, as a `redis://[:password@]host:port/db` or `rediss://[:password@]host:port/db` URL. The address, database number, password and `rediss://` TLS are applied, and the certificate is checked against the system roots. A username or a query option (such as `?pool_size=5`) stops the start rather than being ignored. Keep the password in your secret store and inject the URL at run time. |
 | `IDENTITY_ADDR` | `localhost:9192` | `host:port` of the identity service's gRPC API, used to expand groups and label actors. The connection is plaintext. |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | (none) | OTLP gRPC collector for traces and metrics, as a URL: `http://collector:4317` for plaintext, `https://collector:4317` for TLS. A bare `host:port` still connects as plaintext, but the OpenTelemetry SDK, which reads this variable too, logs `parse url` errors at start. Any other scheme stops the service at start. Unset or empty runs without a collector: no export, no error log. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | (none) | OTLP gRPC collector for traces and metrics (and logs when `OTLP_LOGS_ENABLED` is on), as a URL: `http://collector:4317` for plaintext, `https://collector:4317` for TLS. A bare `host:port` still connects as plaintext, but the OpenTelemetry SDK, which reads this variable too, logs `parse url` errors at start. Any other scheme stops the service at start. Unset or empty runs without a collector: no export, no error log. |
+| `OTLP_INSECURE_SKIP_VERIFY` | (off) | `true` skips checking the collector's certificate on an `https` endpoint. The connection stays encrypted but the collector is no longer authenticated, and logs are not exported while it is on. Any other value leaves checking on. |
+| `OTLP_LOGS_ENABLED` | (off) | `true` also exports logs to the collector, filtered as described under [Log export](#log-export). Any other value exports none. Stdout is unaffected. |
 | `LOG_LEVEL` | `info` | `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` or `disabled`. |
 | `LOG_FORMAT` | `json` | `json`, `console` (or `pretty`), or `both` (JSON on stdout, console on stderr). |
 
 Local development logs at `trace` in `console` format (see `.env.example`). Cluster environments
 log JSON, at `debug` in a dev cluster, `info` in QA or staging and `error` in production.
+
+## Log export
+
+Exported logs are default-deny, and the filters apply to the export only. A record carries its time, level, `service`, message and trace ids, plus the fields named in `internal/telemetry`. Every other field, `error` included, is dropped: a new log field exports nothing until it is added to that list. Only ids, counts, durations, classes, states and short enums belong on it. Levels below `info` are never exported, and strings go through go-otel's redactor plus a rule for `snk_` API keys. `LOG_FORMAT=console` exports nothing, because only JSON lines are read.
+
+## Trace and metric export
+
+Traces, metrics and the resource are default-deny too, through go-otel's telemetry filter. Span names leave only when they match `^sneakers\.[a-z]+\.v1\.[A-Za-z]+/[A-Za-z]+$`; any other span stays in the trace as `[span]`. The only attributes on spans and metrics are `rpc.method`, held to the same pattern, and `rpc.response.status_code`. The resource carries `service.name` alone. Status text, exception events, `tracestate` and baggage never leave, and baggage is not carried on calls.
+
+## Export health
+
+When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, the readiness report lists an optional `otlp` dependency. It reports degraded, with the class `unavailable`, when the last export of traces or metrics failed, or of logs when they are on. This marks the service degraded and never fails readiness, and it is left out when no endpoint is set. OpenTelemetry's own errors print as a gRPC code only, through go-otel's redacted handler, with no error text.
 
 ## Service-to-service authentication
 
