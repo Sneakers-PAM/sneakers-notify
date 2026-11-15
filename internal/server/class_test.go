@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"syscall"
@@ -43,6 +44,10 @@ func TestClassify(t *testing.T) {
 		{status.Error(codes.PermissionDenied, "x"), "unauthenticated"},
 		{status.Error(codes.Internal, "x"), "error"},
 		{refused, "unavailable"},
+		{io.EOF, "unavailable"},
+		{fmt.Errorf("ping: %w", io.EOF), "unavailable"},
+		{io.ErrUnexpectedEOF, "unavailable"},
+		{fmt.Errorf("read: %w", io.ErrUnexpectedEOF), "unavailable"},
 		{errors.New("secret text"), "error"},
 	}
 	for _, tc := range cases {
