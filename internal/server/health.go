@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net"
 	"syscall"
 	"time"
@@ -82,6 +83,10 @@ func classOf(err error) string {
 		return ""
 	case errors.Is(err, syscall.ECONNREFUSED):
 		return "refused"
+	case errors.Is(err, io.EOF), errors.Is(err, io.ErrUnexpectedEOF):
+		// The peer closed a connection the client had kept (a pooled
+		// Valkey connection after the server stopped): down, not a fault.
+		return "unavailable"
 	case errors.As(err, &gs):
 		switch gs.GRPCStatus().Code() {
 		case codes.DeadlineExceeded:
