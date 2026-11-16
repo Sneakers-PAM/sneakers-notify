@@ -116,7 +116,9 @@ func RunWithHealth(ctx context.Context, port string, lg log.Logger, checker *hea
 		case <-time.After(gracefulStopTimeout):
 			s.Stop()
 		}
-		<-errCh
+		if err := <-errCh; err != nil {
+			lg.Warn("server stopped with an error", log.F("error", err.Error()))
+		}
 		return nil
 	case err := <-errCh:
 		return err
