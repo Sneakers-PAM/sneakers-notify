@@ -103,7 +103,12 @@ func TestBootHealth_ServesWhileDependenciesAreAwaited(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- RunWithHealth(ctx, port, log.Nop(), nil, nil) }()
-	t.Cleanup(func() { cancel(); <-done })
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Error(err)
+		}
+	})
 	if st, _ := bootCheck(t, c, ""); st != healthpb.HealthCheckResponse_SERVING {
 		t.Fatalf("readiness from the real server on the same port = %v", st)
 	}

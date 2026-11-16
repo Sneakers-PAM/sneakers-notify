@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/Bugs5382/go-buildinfo/health"
 	log "github.com/Bugs5382/go-log"
+	"github.com/Bugs5382/go-mtls"
 	otel "github.com/Bugs5382/go-otel"
 	workloadauth "github.com/Bugs5382/go-workload-identity"
 	identityv1 "github.com/Sneakers-PAM/sneakers-notify/gen/go/thirdparty/identity/v1"
@@ -52,6 +54,49 @@ func startOtel(ctx context.Context, logger log.Logger, tel telemetry.Settings) f
 	}
 }
 
+// mustMTLS reads the mutual-TLS settings (MTLS_CERT_FILE, MTLS_KEY_FILE,
+// MTLS_CA_FILE): plaintext (nil) when none is set, a failed boot when it is half
+// set. With it on, grpcPort takes only verified clients and the kubelet probes
+// the returned plaintext health-only port, because a probe cannot present a
+// client certificate. Without it the probes use grpcPort, as before.
+func mustMTLS(lg log.Logger, grpcPort string) (*mtls.Provider, string) {
+	mt, err := server.MTLSFromEnv(lg)
+	if err != nil {
+		lg.Fatal(err, "mtls config")
+	}
+	if mt == nil {
+		return nil, grpcPort
+	}
+	probePort := env("HEALTH_PORT", "9091")
+	if probePort == grpcPort {
+		lg.Fatal(errors.New("HEALTH_PORT equals GRPC_PORT"), "mtls config")
+	}
+	return mt, probePort
+}
+
+// identityCreds is how notify dials identity: mutual TLS when configured,
+// plaintext for local development.
+func identityCreds(mt *mtls.Provider) grpc.DialOption {
+	if mt != nil {
+		return mt.DialOption()
+	}
+	return grpc.WithTransportCredentials(insecure.NewCredentials())
+}
+
+// serveMTLS adds the mutual-TLS server option to opts and starts the
+// plaintext health-only port; with mt nil it changes nothing.
+func serveMTLS(ctx context.Context, mt *mtls.Provider, probePort string, lg log.Logger, checker *health.Checker, opts []grpc.ServerOption) []grpc.ServerOption {
+	if mt == nil {
+		return opts
+	}
+	go func() {
+		if err := server.RunHealthOnly(ctx, probePort, lg, checker); err != nil {
+			lg.Fatal(err, "health port exited")
+		}
+	}()
+	return append(opts, mt.ServerOption())
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -62,6 +107,8 @@ func main() {
 	// notify has no database, so it reads its few settings straight from the
 	// environment rather than through a config loader that requires one.
 	grpcPort := env("GRPC_PORT", "9090")
+
+	mt, probePort := mustMTLS(logger, grpcPort)
 
 	// Service-to-service authentication fails closed: check it before anything
 	// else so a missing issuer stops the boot.
@@ -80,7 +127,7 @@ func main() {
 	// The port answers health from here on, while the boot waits for Valkey:
 	// liveness SERVING, so the startup probe passes, and readiness
 	// NOT_SERVING with valkey listed down until it is reached.
-	boot := mustBootHealth(logger, grpcPort)
+	boot := mustBootHealth(logger, probePort)
 	rc, err := connectValkey(ctx, boot, ropts)
 	if err != nil {
 		if ctx.Err() != nil {
@@ -104,7 +151,7 @@ func main() {
 	} else {
 		logger.Warn("identity: " + workloadauth.EnvTokenFile + " unset; calls carry no workload token (local development only)")
 	}
-	idConn, err := grpc.NewClient(idAddr, append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), server.ClientStatsHandler()}, idAuth...)...)
+	idConn, err := grpc.NewClient(idAddr, append([]grpc.DialOption{identityCreds(mt), server.ClientStatsHandler()}, idAuth...)...)
 	if err != nil {
 		logger.Fatal(err, "dial identity", log.F("identity", idAddr))
 	}
@@ -140,6 +187,7 @@ func main() {
 		logger.Fatal(err, "health checker")
 	}
 	boot.Stop()
+	authOpts = serveMTLS(ctx, mt, probePort, logger, checker, authOpts)
 	if err := server.RunWithHealth(ctx, grpcPort, logger, checker, func(gs *grpc.Server) {
 		grpcsvc.RegisterServer(gs, svc)
 	}, authOpts...); err != nil {

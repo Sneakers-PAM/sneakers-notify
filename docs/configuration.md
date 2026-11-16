@@ -29,6 +29,30 @@ Traces, metrics and the resource are default-deny too, through go-otel's telemet
 
 When `OTEL_EXPORTER_OTLP_ENDPOINT` is set, the readiness report lists an optional `otlp` dependency. It reports degraded, with the class `unavailable`, when the last export of traces or metrics failed, or of logs when they are on. This marks the service degraded and never fails readiness, and it is left out when no endpoint is set. OpenTelemetry's own errors print as a gRPC code only, through go-otel's redacted handler, with no error text.
 
+## Mutual TLS
+
+Notify serves and calls over mutual TLS with the owner's package
+[`github.com/Bugs5382/go-mtls`](https://github.com/Bugs5382/go-mtls) (v1.0.0). The server requires and
+verifies a client certificate against the CA file and refuses anything below TLS 1.3; the client to
+identity verifies identity's certificate against the CA file and the host name it dialed. Renewed
+files are picked up on the next handshake, with no restart. A valid certificate says who is calling
+and grants nothing: the workload-token checks below still apply.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MTLS_CERT_FILE` | (unset) | PEM certificate, with any chain. |
+| `MTLS_KEY_FILE` | (unset) | PEM private key for it. |
+| `MTLS_CA_FILE` | (unset) | PEM CA that signs every service in the cluster. |
+| `HEALTH_PORT` | `9091` | Plaintext, health-only port, read only when mutual TLS is on. Must differ from `GRPC_PORT`. |
+
+With none of the three files set the service stays plaintext, for local development, and logs a
+warning; `GRPC_PORT` then carries health too, as before. With some set, or with files that cannot be
+read, it refuses to start. With them set, `GRPC_PORT` takes only verified clients and `HEALTH_PORT`
+carries the health service and nothing else (no notify RPC, no reflection), because the kubelet's
+gRPC probe cannot present a client certificate. Point the startup, liveness and readiness probes at
+`HEALTH_PORT`; the boot health that answers while Valkey is awaited is served there too. The identity
+address (`IDENTITY_ADDR`) must use a host name the identity certificate carries.
+
 ## Service-to-service authentication
 
 Notify checks every caller's workload identity and presents its own when it calls identity. The
